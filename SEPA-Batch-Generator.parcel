@@ -1,0 +1,27 @@
+{
+    "GeneralSettings": {
+        "NetProjectPath": "SEPA-Batch-Generator.csproj",
+        "ApplicationName": "SEPA Batch Generator",
+        "Version": "1.0.0",
+        "PackageName": "SEPA-Batch-Generator",
+        "AssemblyName": "SEPA-Batch-Generator"
+    },
+    "LinuxSettings": {
+        "CreateBinSymlink": "True"
+    },
+    "Win32Settings": {
+        "IncludeUninstaller": "True"
+    },
+    "MacOsSettings": {
+        "CreateBundle": true,
+        "BundleIdentifier": "io.LeonHoog.SEPA-Batch-Generator",
+        "BundleCategory": "Finance",
+        "AppIcon": "Assets/app-icon/macos/AppIcon.icns",
+        "SigningCredentialsType": "AdHoc"
+    },
+    "PublishSettings": {
+        "PublishSingleFile": "True",
+        "PublishTrimmed": "True",
+        "ExtraBuildProperties": {}
+    }
+}
