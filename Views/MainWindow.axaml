@@ -8,7 +8,7 @@
         d:DesignHeight="860"
         x:Class="SEPA_Batch_Generator.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/logo.ico"
         RequestedThemeVariant="Dark"
         Title="SEPA Direct Debit Batch Generator"
         Background="#161B24"
