@@ -1,0 +1,392 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SEPA_Batch_Generator.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="1180"
+        d:DesignHeight="860"
+        x:Class="SEPA_Batch_Generator.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        RequestedThemeVariant="Dark"
+        Title="SEPA Direct Debit Batch Generator"
+        Background="#161B24"
+        Foreground="#E7ECF3">
+
+    <Window.Styles>
+        <Style Selector="Border.topbar">
+            <Setter Property="Background" Value="#202837"/>
+            <Setter Property="BorderBrush" Value="#2B3648"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#1E2533"/>
+            <Setter Property="BorderBrush" Value="#2C374A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="BoxShadow" Value="0 8 24 0 #28000000"/>
+        </Style>
+
+        <Style Selector="Border.status-chip">
+            <Setter Property="Background" Value="#243047"/>
+            <Setter Property="BorderBrush" Value="#33435E"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,7"/>
+        </Style>
+
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#F2F5FA"/>
+        </Style>
+
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#C7D0DF"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style Selector="TextBlock.helper-text">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#93A1B8"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="TextBox.form-control">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="#212C3E"/>
+            <Setter Property="BorderBrush" Value="#34445F"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="ComboBox.form-control">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Background" Value="#212C3E"/>
+            <Setter Property="BorderBrush" Value="#34445F"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="DatePicker.form-control">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Background" Value="#212C3E"/>
+            <Setter Property="BorderBrush" Value="#34445F"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="NumericUpDown.form-control">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Background" Value="#212C3E"/>
+            <Setter Property="BorderBrush" Value="#34445F"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="Button.secondary-action">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#273349"/>
+            <Setter Property="Foreground" Value="#E6ECF6"/>
+            <Setter Property="BorderBrush" Value="#3A4B67"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.primary-action">
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#6D5EF9"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#8A7DFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="ComboBox.column-invalid">
+            <Setter Property="BorderBrush" Value="#D46A6A"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Background" Value="#3A252C"/>
+        </Style>
+
+        <Style Selector="ListBox.log-list">
+            <Setter Property="Background" Value="#1A2231"/>
+            <Setter Property="BorderBrush" Value="#2E3B51"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="8"/>
+        </Style>
+    </Window.Styles>
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*" Margin="20" RowSpacing="18">
+        <Border Classes="topbar">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="12">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <Button Classes="secondary-action" Content="Inspecteer" Command="{Binding InspectCommand}"/>
+                    <Button Classes="primary-action" Content="Genereer Batch Bestand" Command="{Binding GenerateXmlCommand}"/>
+                </StackPanel>
+
+                <Border Grid.Row="0" Grid.Column="1" Classes="status-chip" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Status}" FontWeight="SemiBold" Foreground="#EAF0FA"/>
+                </Border>
+
+                <TextBlock Grid.Row="1"
+                           Grid.ColumnSpan="2"
+                           Classes="helper-text"
+                           Text="Voer instellingen in, controleer met Inspecteer en genereer daarna het batchbestand."/>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="18" RowSpacing="18">
+                <Border Grid.Row="0" Grid.Column="0" Classes="card">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="General" Classes="section-title"/>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Excel bestand" Classes="field-label"/>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Classes="form-control" Text="{Binding ExcelPath}"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseExcelFile_Click"/>
+                            </Grid>
+                            <TextBlock Classes="helper-text" Text="Selecteer het bronbestand voor de incasso-import."/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Werkbladnaam" Classes="field-label"/>
+                            <ComboBox Classes="form-control"
+                                      IsEnabled="{Binding HasExcelSelected}"
+                                      ItemsSource="{Binding WorksheetNames}"
+                                      SelectedItem="{Binding SheetName}"
+                                      IsEditable="False" />
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Text="Aantal kopregels" Classes="field-label"/>
+                                <NumericUpDown Classes="form-control"
+                                               IsEnabled="{Binding HasExcelSelected}"
+                                               Value="{Binding HeaderRows}"
+                                               Minimum="0"
+                                               Maximum="100"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Text="Incassodatum" Classes="field-label"/>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <DatePicker Grid.Column="0"
+                                                Classes="form-control"
+                                                SelectedDate="{Binding GeneralCollectionDate}"/>
+                                    <Button Grid.Column="1"
+                                            Classes="secondary-action"
+                                            Content="Wissen"
+                                            IsVisible="{Binding HasGeneralCollectionDate}"
+                                            Command="{Binding ClearGeneralCollectionDateCommand}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <StackPanel Grid.Column="0" Spacing="6">
+                                <TextBlock Text="Filter kolom" Classes="field-label"/>
+                                <ComboBox Classes="form-control"
+                                          IsEnabled="{Binding HasExcelSelected}"
+                                          ItemsSource="{Binding FilterColumnOptions}"
+                                          SelectedItem="{Binding FilterColumn}"
+                                          IsEditable="True" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Text="Filter waarde" Classes="field-label"/>
+                                <TextBox Classes="form-control"
+                                         IsEnabled="{Binding HasExcelSelected}"
+                                         Text="{Binding FilterValue}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Algemene omschrijving" Classes="field-label"/>
+                            <TextBox Classes="form-control" Text="{Binding GeneralDescription}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="0" Grid.Column="1" Classes="card">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Creditor" Classes="section-title"/>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Naam" Classes="field-label"/>
+                            <TextBox Classes="form-control" Text="{Binding CreditorName}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="IBAN" Classes="field-label"/>
+                            <TextBox Classes="form-control" Text="{Binding CreditorIban}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="BIC" Classes="field-label"/>
+                            <TextBox Classes="form-control" Text="{Binding CreditorBic}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="ZZZ (code machtiging tot incasseren)" Classes="field-label"/>
+                            <TextBox Classes="form-control" Text="{Binding CreditorId}"/>
+                            <TextBlock Classes="helper-text" Text="Gebruik het geregistreerde crediteur-ID van de incassant."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Excel Mapping" Classes="section-title"/>
+                        <TextBlock Classes="helper-text" Text="Koppel elke vereiste waarde aan de juiste kolom in het Excel-bestand."/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                            <StackPanel Grid.Column="0" Spacing="10">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Naam debiteur" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding DebtorNameColumn}" IsEditable="True" Classes.column-invalid="{Binding IsDebtorNameColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Achternaam debiteur (optioneel)" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding DebtorLastNameColumn}" IsEditable="True" Classes.column-invalid="{Binding IsDebtorLastNameColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="IBAN debiteur" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding DebtorIbanColumn}" IsEditable="True" Classes.column-invalid="{Binding IsDebtorIbanColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="BIC debiteur (optioneel)" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding DebtorBicColumn}" IsEditable="True" Classes.column-invalid="{Binding IsDebtorBicColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Bedrag" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding AmountColumn}" IsEditable="True" Classes.column-invalid="{Binding IsAmountColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Machtigingskenmerk" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding MandateIdColumn}" IsEditable="True" Classes.column-invalid="{Binding IsMandateIdColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Mandaatdatum" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding MandateDateColumn}" IsEditable="True" Classes.column-invalid="{Binding IsMandateDateColumnInvalid}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="10">
+                                <StackPanel Spacing="6" IsVisible="{Binding ShowCollectionDateColumnMapping}">
+                                    <TextBlock Text="Incassodatum" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding CollectionDateColumn}" IsEditable="True" Classes.column-invalid="{Binding IsCollectionDateColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Sequence Type" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding SequenceTypeColumn}" IsEditable="True" Classes.column-invalid="{Binding IsSequenceTypeColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Omschrijving" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding DescriptionColumn}" IsEditable="True" Classes.column-invalid="{Binding IsDescriptionColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Adres1 (optioneel)" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding Address1Column}" IsEditable="True" Classes.column-invalid="{Binding IsAddress1ColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Adres2 (optioneel)" Classes="field-label"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding HasExcelSelected}" ItemsSource="{Binding ColumnOptions}" Text="{Binding Address2Column}" IsEditable="True" Classes.column-invalid="{Binding IsAddress2ColumnInvalid}"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Batchnummer" Classes="field-label"/>
+                                    <NumericUpDown Classes="form-control" Value="{Binding BatchNumber}" Minimum="1" Maximum="999999"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2" Grid.ColumnSpan="2" Classes="card">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="Output" Classes="section-title"/>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Output map" Classes="field-label"/>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Classes="form-control" Text="{Binding OutputFolder}"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseOutputFolder_Click"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Logbestand" Classes="field-label"/>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Classes="form-control" Text="{Binding LogFilePath}"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseLogFile_Click"/>
+                            </Grid>
+                            <TextBlock Classes="helper-text" Text="Logberichten worden aan dit bestand toegevoegd."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="3" Grid.ColumnSpan="2" Classes="card">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Inspectie- en proceslog" Classes="section-title"/>
+                        <ListBox Classes="log-list"
+                                 Height="240"
+                                 ItemsSource="{Binding Messages}"
+                                 DoubleTapped="MessagesListBox_DoubleTapped" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <Border Grid.RowSpan="2"
+                IsVisible="{Binding IsLoadingExcel}"
+                Background="#A0121822"
+                ZIndex="1000">
+            <Border Width="320"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#1E2533"
+                    BorderBrush="#33435E"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Excel-bestand laden..." FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <ProgressBar IsIndeterminate="True" Height="8"/>
+                    <TextBlock Text="Even geduld" HorizontalAlignment="Center" Classes="helper-text"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>
