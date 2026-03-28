@@ -2,7 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SEPA_Batch_Generator.App"
              xmlns:local="using:SEPA_Batch_Generator"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Default"
+             Name="SEPA Direct Debit Batch Generator">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
