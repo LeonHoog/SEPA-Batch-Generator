@@ -113,8 +113,8 @@ namespace SEPA_Batch_Generator.Services
 
         private static string BuildDebtorName(string firstNamePart, string lastNamePart)
         {
-            var first = firstNamePart.Trim();
-            var last = lastNamePart.Trim();
+            var first = ReplaceSpecialCharacters(firstNamePart.Trim());
+            var last = ReplaceSpecialCharacters(lastNamePart.Trim());
 
             if (string.IsNullOrWhiteSpace(last))
             {
@@ -127,6 +127,26 @@ namespace SEPA_Batch_Generator.Services
             }
 
             return $"{first} {last}";
+        }
+
+        private static string ReplaceSpecialCharacters(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return input;
+            }
+
+            return input
+                .Replace("ä", "a")
+                .Replace("Ä", "A")
+                .Replace("ï", "i")
+                .Replace("Ï", "I")
+                .Replace("ë", "e")
+                .Replace("Ë", "E")
+                .Replace("ö", "o")
+                .Replace("Ö", "O")
+                .Replace("ü", "u")
+                .Replace("Ü", "U");
         }
 
         private static string GetCell(IXLWorksheet worksheet, int row, string? column)
@@ -152,12 +172,68 @@ namespace SEPA_Batch_Generator.Services
 
         private static bool TryParseAmount(string input, out decimal amount)
         {
-            if (decimal.TryParse(input, NumberStyles.Number, new CultureInfo("nl-NL"), out amount))
+            if (string.IsNullOrWhiteSpace(input))
             {
-                return true;
+                amount = 0;
+                return false;
             }
 
-            return decimal.TryParse(input, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+            // Normalize the input to handle different decimal separators
+            var normalized = NormalizeDecimalSeparator(input.Trim());
+            
+            // Try parsing with invariant culture (uses period as decimal separator)
+            return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
+        }
+
+        private static string NormalizeDecimalSeparator(string input)
+        {
+            // Remove leading/trailing whitespace
+            input = input.Trim();
+            
+            // Find the last occurrence of period or comma
+            int lastPeriodIndex = input.LastIndexOf('.');
+            int lastCommaIndex = input.LastIndexOf(',');
+
+            if (lastPeriodIndex < 0 && lastCommaIndex < 0)
+            {
+                // No separators found, return as-is
+                return input;
+            }
+
+            if (lastPeriodIndex > lastCommaIndex)
+            {
+                // Period is the last separator - could be thousand or decimal
+                // If there are 3 or fewer digits after period, it's likely decimal
+                int digitsAfterPeriod = input.Length - lastPeriodIndex - 1;
+                if (digitsAfterPeriod <= 3)
+                {
+                    // Period is decimal separator
+                    // Remove all commas (thousand separators in US format)
+                    return input.Replace(",", "");
+                }
+                else
+                {
+                    // Period is thousand separator, comma is decimal
+                    return input.Replace(".", "").Replace(",", ".");
+                }
+            }
+            else
+            {
+                // Comma is the last separator
+                // If there are 3 or fewer digits after comma, it's likely decimal
+                int digitsAfterComma = input.Length - lastCommaIndex - 1;
+                if (digitsAfterComma <= 3)
+                {
+                    // Comma is decimal separator (EU format)
+                    // Remove period (thousand separator) and replace comma with period
+                    return input.Replace(".", "").Replace(",", ".");
+                }
+                else
+                {
+                    // Comma is thousand separator, period is decimal (shouldn't happen if period not found)
+                    return input.Replace(",", "");
+                }
+            }
         }
 
         private static int ToColumnIndexOrZero(string? column)

@@ -1,6 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using SEPA_Batch_Generator.ViewModels;
 using System.ComponentModel;
@@ -177,6 +179,14 @@ namespace SEPA_Batch_Generator.Views
                 return;
             }
 
+            // Check if this is the "Totaalbedrag" message
+            if (message.Contains("Totaalbedrag") && _viewModel is not null)
+            {
+                var breakdown = _viewModel.GetAmountBreakdown();
+                await ShowBreakdownDialog(breakdown);
+                return;
+            }
+
             var path = TryExtractPathFromMessage(message);
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -187,6 +197,52 @@ namespace SEPA_Batch_Generator.Views
             {
                 await Clipboard!.SetTextAsync(path);
             }
+        }
+
+        private async Task ShowBreakdownDialog(string breakdown)
+        {
+            var textBlock = new TextBlock
+            {
+                Text = breakdown,
+                FontFamily = new("Courier New"),
+                FontSize = 12,
+                Foreground = Foreground,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+
+            var scrollViewer = new ScrollViewer
+            {
+                Content = textBlock,
+                Height = 400
+            };
+
+            var okButton = new Button
+            {
+                Content = "OK",
+                HorizontalAlignment = HorizontalAlignment.Right,
+                MinWidth = 100
+            };
+
+            var panel = new StackPanel
+            {
+                Spacing = 12,
+                Children = { scrollViewer, okButton }
+            };
+
+            var dialog = new Window
+            {
+                Content = panel,
+                Width = 700,
+                Height = 500,
+                Title = "Overboeking overzicht",
+                CanResize = true,
+                ShowInTaskbar = false,
+                SizeToContent = SizeToContent.Manual,
+                Padding = new Thickness(20)
+            };
+
+            okButton.Click += (_, _) => dialog.Close();
+            await dialog.ShowDialog(this);
         }
 
         private static string? TryExtractPathFromMessage(string message)

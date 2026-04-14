@@ -324,6 +324,25 @@ namespace SEPA_Batch_Generator.ViewModels
                 AddMessage(message);
             }
 
+            // Detailed summary of import results
+            var rejected = SepaInputValidator.GetLastRejectedRecords();
+            
+            AddMessage(string.Empty);
+            AddMessage("=== Samenvatting Validatie ===");
+            AddMessage($"Totaal geïmporteerd: {imported.Count} regels");
+            AddMessage($"Geaccepteerd: {_validRecords.Count} regels");
+            AddMessage($"Niet meegenomen: {rejected.Count} regels");
+            
+            if (rejected.Count > 0)
+            {
+                AddMessage(string.Empty);
+                AddMessage("--- Personen NIET meegenomen in incasso batch ---");
+                foreach (var (record, reason) in rejected)
+                {
+                    AddMessage($"  Rij {record.RowNumber}: {record.DebtorName} - Reden: {reason}");
+                }
+            }
+
             if (_validRecords.Count == 0)
             {
                 AddMessage("Geen geldige regels gevonden.");
@@ -331,17 +350,21 @@ namespace SEPA_Batch_Generator.ViewModels
                 return;
             }
 
-            AddMessage($"Totaalbedrag incasso's: {TotalAmountDisplay}");
+            AddMessage(string.Empty);
+            AddMessage($"Totaalbedrag (alleen geaccepteerde regels): {TotalAmountDisplay}");
 
             if (validationMessages.Count > 0)
             {
-                Status = "Inspectie bevat fouten";
-                return;
+                Status = "Inspectie bevat waarschuwingen";
+                InspectionSucceeded = true;
+            }
+            else
+            {
+                InspectionSucceeded = true;
+                AddMessage($"Inspectie succesvol: {_validRecords.Count} regels gevalideerd.");
+                Status = "Inspectie succesvol";
             }
 
-            InspectionSucceeded = true;
-            AddMessage($"Inspectie succesvol: {_validRecords.Count} regels gevalideerd.");
-            Status = "Inspectie succesvol";
             WriteLog();
         }
 
@@ -647,5 +670,31 @@ namespace SEPA_Batch_Generator.ViewModels
         public bool IsDescriptionColumnInvalid => IsRequiredColumnInvalid(DescriptionColumn);
         public bool IsAddress1ColumnInvalid => IsOptionalColumnInvalid(Address1Column);
         public bool IsAddress2ColumnInvalid => IsOptionalColumnInvalid(Address2Column);
+
+        public string GetAmountBreakdown()
+        {
+            if (_validRecords.Count == 0)
+            {
+                return "Geen geldige records beschikbaar.";
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("=== Overzicht overboeking per persoon ===");
+            sb.AppendLine();
+
+            var sorted = _validRecords.OrderByDescending(r => r.Amount).ToList();
+            foreach (var record in sorted)
+            {
+                var amount = record.Amount.ToString("0.00", CultureInfo.GetCultureInfo("nl-NL"));
+                sb.AppendLine($"{record.DebtorName,-50} € {amount,12}");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine(new string('-', 65));
+            var total = TotalAmount.ToString("0.00", CultureInfo.GetCultureInfo("nl-NL"));
+            sb.AppendLine($"{"TOTAAL",-50} € {total,12}");
+
+            return sb.ToString();
+        }
     }
 }
