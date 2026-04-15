@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using SEPA_Batch_Generator.ViewModels;
 using System.ComponentModel;
@@ -63,7 +63,7 @@ namespace SEPA_Batch_Generator.Views
                 {
                     new("Excel bestanden")
                     {
-                        Patterns = new[] { "*.xlsx", "*.xlsm", "*.xls" }
+                        Patterns = ["*.xlsx", "*.xlsm", "*.xls"]
                     }
                 }
             });
@@ -114,8 +114,8 @@ namespace SEPA_Batch_Generator.Views
                 {
                     new("Tekstbestand")
                     {
-                        Patterns = new[] { "*.txt" },
-                        MimeTypes = new[] { "text/plain" }
+                        Patterns = ["*.txt"],
+                        MimeTypes = ["text/plain"]
                     }
                 }
             });
