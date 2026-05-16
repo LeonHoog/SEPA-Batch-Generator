@@ -17,13 +17,15 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _lastOpenElsewhereWarningPath = string.Empty;
     private bool _isLoadingSettings;
     private int _metadataRefreshDepth;
+    private bool _hasLoadedColumnMetadata;
 
     public ObservableCollection<string> Messages { get; } = [];
     public ObservableCollection<string> WorksheetNames { get; } = [];
-    public ObservableCollection<string> FilterColumnOptions { get; } = [];
-    public ObservableCollection<string> ColumnOptions { get; } = [];
+    public ObservableCollection<ColumnOption> FilterColumnOptions { get; } = [];
+    public ObservableCollection<ColumnOption> ColumnOptions { get; } = [];
 
     public bool HasExcelSelected => !string.IsNullOrWhiteSpace(ExcelPath) && File.Exists(ExcelPath);
+    public bool CanEditExcelMapping => HasExcelSelected && !IsLoadingExcel && _hasLoadedColumnMetadata;
     public bool ShowCollectionDateColumnMapping => !GeneralCollectionDate.HasValue;
     public bool HasGeneralCollectionDate => GeneralCollectionDate.HasValue;
     public static DateTimeOffset MinimumCollectionDate => new(DateTime.Today.AddDays(2));
@@ -141,6 +143,11 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(TotalAmountDisplay));
     }
 
+    partial void OnIsLoadingExcelChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanEditExcelMapping));
+    }
+
     partial void OnGeneralCollectionDateChanged(DateTimeOffset? value)
     {
         OnPropertyChanged(nameof(ShowCollectionDateColumnMapping));
@@ -158,23 +165,41 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnExcelPathChanged(string value)
     {
         OnPropertyChanged(nameof(HasExcelSelected));
+        OnPropertyChanged(nameof(CanEditExcelMapping));
+
+        if (_isLoadingSettings)
+            return;
+
+        SaveSettingsCore(addMessage: false);
+        ReloadSettingsFromIni();
         _ = ReloadExcelMetadataAsync();
-        SaveSettingsQuietly();
     }
 
     partial void OnSheetNameChanged(string value)
     {
+        OnPropertyChanged(nameof(CanEditExcelMapping));
+
+        if (_isLoadingSettings)
+            return;
+
+        SaveSettingsCore(addMessage: false);
+        ReloadSettingsFromIni();
         _ = ReloadExcelMetadataAsync(loadWorksheets: false);
-        SaveSettingsQuietly();
     }
 
     partial void OnHeaderRowsChanged(int value)
     {
+        OnPropertyChanged(nameof(CanEditExcelMapping));
         _ = ReloadExcelMetadataAsync(loadWorksheets: false);
         SaveSettingsQuietly();
     }
 
-    partial void OnFilterColumnChanged(string value) => SaveSettingsQuietly();
+    partial void OnFilterColumnChanged(string value)
+    {
+        OnPropertyChanged(nameof(FilterColumnOption));
+        SaveSettingsQuietly();
+    }
+
     partial void OnFilterValueChanged(string value) => SaveSettingsQuietly();
     partial void OnOutputFolderChanged(string value) => SaveSettingsQuietly();
     partial void OnLogFilePathChanged(string value) => SaveSettingsQuietly();
@@ -185,42 +210,49 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnCreditorIdChanged(string value) => SaveSettingsQuietly();
     partial void OnDebtorNameColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(DebtorNameColumnOption));
         OnPropertyChanged(nameof(IsDebtorNameColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnDebtorLastNameColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(DebtorLastNameColumnOption));
         OnPropertyChanged(nameof(IsDebtorLastNameColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnDebtorIbanColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(DebtorIbanColumnOption));
         OnPropertyChanged(nameof(IsDebtorIbanColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnDebtorBicColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(DebtorBicColumnOption));
         OnPropertyChanged(nameof(IsDebtorBicColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnAmountColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(AmountColumnOption));
         OnPropertyChanged(nameof(IsAmountColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnMandateIdColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(MandateIdColumnOption));
         OnPropertyChanged(nameof(IsMandateIdColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnMandateDateColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(MandateDateColumnOption));
         OnPropertyChanged(nameof(IsMandateDateColumnInvalid));
         SaveSettingsQuietly();
     }
@@ -232,30 +264,35 @@ public partial class MainWindowViewModel : ViewModelBase
             GeneralCollectionDate = null;
         }
 
+        OnPropertyChanged(nameof(CollectionDateColumnOption));
         OnPropertyChanged(nameof(IsCollectionDateColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnSequenceTypeColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(SequenceTypeColumnOption));
         OnPropertyChanged(nameof(IsSequenceTypeColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnDescriptionColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(DescriptionColumnOption));
         OnPropertyChanged(nameof(IsDescriptionColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnAddress1ColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(Address1ColumnOption));
         OnPropertyChanged(nameof(IsAddress1ColumnInvalid));
         SaveSettingsQuietly();
     }
 
     partial void OnAddress2ColumnChanged(string value)
     {
+        OnPropertyChanged(nameof(Address2ColumnOption));
         OnPropertyChanged(nameof(IsAddress2ColumnInvalid));
         SaveSettingsQuietly();
     }
@@ -411,6 +448,12 @@ public partial class MainWindowViewModel : ViewModelBase
             ok = false;
         }
 
+        if (!CanEditExcelMapping)
+        {
+            AddMessage("Wacht tot het Excel-bestand en werkblad volledig zijn geladen voordat je de Excel Mapping gebruikt.");
+            ok = false;
+        }
+
         if (GeneralCollectionDate.HasValue && GeneralCollectionDate.Value.Date < MinimumCollectionDate.Date)
         {
             AddMessage($"De algemene incassodatum moet vanaf {MinimumCollectionDate:dd-MM-yyyy} zijn.");
@@ -435,8 +478,10 @@ public partial class MainWindowViewModel : ViewModelBase
             WorksheetNames.Clear();
             FilterColumnOptions.Clear();
             ColumnOptions.Clear();
-            ColumnOptions.Insert(0, string.Empty);
+            _hasLoadedColumnMetadata = false;
+            NotifyColumnSelectionBindingsChanged();
             NotifyColumnMappingValidationChanged();
+            OnPropertyChanged(nameof(CanEditExcelMapping));
             IsLoadingExcel = false;
             _lastOpenElsewhereWarningPath = string.Empty;
             return;
@@ -447,6 +492,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             IsLoadingExcel = true;
+            OnPropertyChanged(nameof(CanEditExcelMapping));
 
             if (loadWorksheets
                 && !string.Equals(_lastOpenElsewhereWarningPath, ExcelPath, StringComparison.OrdinalIgnoreCase)
@@ -457,7 +503,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             List<string> worksheets = [];
-            List<string> columns;
+            List<ColumnOption> columns;
 
             if (loadWorksheets)
             {
@@ -470,7 +516,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 selectedSheet = worksheets[0];
             }
 
-            columns = await Task.Run(() => ExcelMetadataService.GetFilterColumns(ExcelPath, selectedSheet, HeaderRows));
+            columns = await Task.Run(() => ExcelMetadataService.GetColumnOptions(ExcelPath, selectedSheet, HeaderRows));
 
             if (currentVersion != _metadataLoadVersion)
             {
@@ -493,17 +539,27 @@ public partial class MainWindowViewModel : ViewModelBase
 
             FilterColumnOptions.Clear();
             ColumnOptions.Clear();
+            FilterColumnOptions.Add(ColumnOption.Empty);
+            ColumnOptions.Add(ColumnOption.Empty);
             foreach (var column in columns)
             {
                 FilterColumnOptions.Add(column);
                 ColumnOptions.Add(column);
             }
 
-            ColumnOptions.Insert(0, string.Empty);
+            _hasLoadedColumnMetadata = true;
+            NotifyColumnSelectionBindingsChanged();
             NotifyColumnMappingValidationChanged();
+            OnPropertyChanged(nameof(CanEditExcelMapping));
         }
         catch (Exception ex)
         {
+            _hasLoadedColumnMetadata = false;
+            FilterColumnOptions.Clear();
+            ColumnOptions.Clear();
+            NotifyColumnSelectionBindingsChanged();
+            NotifyColumnMappingValidationChanged();
+            OnPropertyChanged(nameof(CanEditExcelMapping));
             AddMessage($"Kolommen uitlezen mislukt: {ex.Message}");
         }
         finally
@@ -523,7 +579,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ExcelPath = Get(values, nameof(ExcelPath), ExcelPath);
         SheetName = Get(values, nameof(SheetName), SheetName);
         HeaderRows = ParseInt(Get(values, nameof(HeaderRows), HeaderRows.ToString()), HeaderRows);
-        FilterColumn = Get(values, nameof(FilterColumn), FilterColumn);
+        FilterColumn = NormalizeColumnId(Get(values, nameof(FilterColumn), FilterColumn));
         FilterValue = Get(values, nameof(FilterValue), FilterValue);
         var generalCollectionDateText = Get(values, nameof(GeneralCollectionDate), string.Empty);
         if (DateTime.TryParse(generalCollectionDateText, out var parsedCollectionDate))
@@ -537,19 +593,39 @@ public partial class MainWindowViewModel : ViewModelBase
         CreditorIban = Get(values, nameof(CreditorIban), CreditorIban);
         CreditorBic = Get(values, nameof(CreditorBic), CreditorBic);
         CreditorId = Get(values, nameof(CreditorId), CreditorId);
-        DebtorNameColumn = Get(values, nameof(DebtorNameColumn), DebtorNameColumn);
-        DebtorLastNameColumn = Get(values, nameof(DebtorLastNameColumn), DebtorLastNameColumn);
-        DebtorIbanColumn = Get(values, nameof(DebtorIbanColumn), DebtorIbanColumn);
-        DebtorBicColumn = Get(values, nameof(DebtorBicColumn), DebtorBicColumn);
-        AmountColumn = Get(values, nameof(AmountColumn), AmountColumn);
-        MandateIdColumn = Get(values, nameof(MandateIdColumn), MandateIdColumn);
-        MandateDateColumn = Get(values, nameof(MandateDateColumn), MandateDateColumn);
-        CollectionDateColumn = Get(values, nameof(CollectionDateColumn), CollectionDateColumn);
-        SequenceTypeColumn = Get(values, nameof(SequenceTypeColumn), SequenceTypeColumn);
-        DescriptionColumn = Get(values, nameof(DescriptionColumn), DescriptionColumn);
-        Address1Column = Get(values, nameof(Address1Column), Address1Column);
-        Address2Column = Get(values, nameof(Address2Column), Address2Column);
+        DebtorNameColumn = NormalizeColumnId(Get(values, nameof(DebtorNameColumn), DebtorNameColumn));
+        DebtorLastNameColumn = NormalizeColumnId(Get(values, nameof(DebtorLastNameColumn), DebtorLastNameColumn));
+        DebtorIbanColumn = NormalizeColumnId(Get(values, nameof(DebtorIbanColumn), DebtorIbanColumn));
+        DebtorBicColumn = NormalizeColumnId(Get(values, nameof(DebtorBicColumn), DebtorBicColumn));
+        AmountColumn = NormalizeColumnId(Get(values, nameof(AmountColumn), AmountColumn));
+        MandateIdColumn = NormalizeColumnId(Get(values, nameof(MandateIdColumn), MandateIdColumn));
+        MandateDateColumn = NormalizeColumnId(Get(values, nameof(MandateDateColumn), MandateDateColumn));
+        CollectionDateColumn = NormalizeColumnId(Get(values, nameof(CollectionDateColumn), CollectionDateColumn));
+        SequenceTypeColumn = NormalizeColumnId(Get(values, nameof(SequenceTypeColumn), SequenceTypeColumn));
+        DescriptionColumn = NormalizeColumnId(Get(values, nameof(DescriptionColumn), DescriptionColumn));
+        Address1Column = NormalizeColumnId(Get(values, nameof(Address1Column), Address1Column));
+        Address2Column = NormalizeColumnId(Get(values, nameof(Address2Column), Address2Column));
         BatchNumber = ParseInt(Get(values, nameof(BatchNumber), BatchNumber.ToString()), BatchNumber);
+    }
+
+    private void ReloadSettingsFromIni()
+    {
+        var previousLoadingState = _isLoadingSettings;
+        _isLoadingSettings = true;
+
+        try
+        {
+            LoadSettings();
+        }
+        finally
+        {
+            _isLoadingSettings = previousLoadingState;
+        }
+
+        OnPropertyChanged(nameof(HasExcelSelected));
+        OnPropertyChanged(nameof(CanEditExcelMapping));
+        NotifyColumnSelectionBindingsChanged();
+        NotifyColumnMappingValidationChanged();
     }
 
     private void SaveSettingsQuietly()
@@ -631,11 +707,51 @@ public partial class MainWindowViewModel : ViewModelBase
     private static int ParseInt(string value, int fallback)
         => int.TryParse(value, out var number) ? number : fallback;
 
+    private static string NormalizeColumnId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim().ToUpperInvariant();
+        var firstPart = normalized.Split([' ', '-', '|'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        return string.IsNullOrWhiteSpace(firstPart) ? string.Empty : firstPart;
+    }
+
+    private ColumnOption? GetColumnOption(string? columnId)
+    {
+        var normalizedId = NormalizeColumnId(columnId);
+        if (string.IsNullOrWhiteSpace(normalizedId))
+        {
+            return ColumnOptions.FirstOrDefault(option => string.IsNullOrWhiteSpace(option.Id));
+        }
+
+        return ColumnOptions.FirstOrDefault(option => string.Equals(option.Id, normalizedId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void NotifyColumnSelectionBindingsChanged()
+    {
+        OnPropertyChanged(nameof(FilterColumnOption));
+        OnPropertyChanged(nameof(DebtorNameColumnOption));
+        OnPropertyChanged(nameof(DebtorLastNameColumnOption));
+        OnPropertyChanged(nameof(DebtorIbanColumnOption));
+        OnPropertyChanged(nameof(DebtorBicColumnOption));
+        OnPropertyChanged(nameof(AmountColumnOption));
+        OnPropertyChanged(nameof(MandateIdColumnOption));
+        OnPropertyChanged(nameof(MandateDateColumnOption));
+        OnPropertyChanged(nameof(CollectionDateColumnOption));
+        OnPropertyChanged(nameof(SequenceTypeColumnOption));
+        OnPropertyChanged(nameof(DescriptionColumnOption));
+        OnPropertyChanged(nameof(Address1ColumnOption));
+        OnPropertyChanged(nameof(Address2ColumnOption));
+    }
+
     private bool IsRequiredColumnInvalid(string? column)
-        => string.IsNullOrWhiteSpace(column) || !ColumnOptions.Contains(column);
+        => GetColumnOption(column) is null || string.IsNullOrWhiteSpace(GetColumnOption(column)?.Id);
 
     private bool IsOptionalColumnInvalid(string? column)
-        => !string.IsNullOrWhiteSpace(column) && !ColumnOptions.Contains(column);
+        => !string.IsNullOrWhiteSpace(column) && GetColumnOption(column) is null;
 
     private void NotifyColumnMappingValidationChanged()
     {
@@ -665,6 +781,162 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsDescriptionColumnInvalid => IsRequiredColumnInvalid(DescriptionColumn);
     public bool IsAddress1ColumnInvalid => IsOptionalColumnInvalid(Address1Column);
     public bool IsAddress2ColumnInvalid => IsOptionalColumnInvalid(Address2Column);
+
+    public ColumnOption? FilterColumnOption
+    {
+        get => GetColumnOption(FilterColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            FilterColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? DebtorNameColumnOption
+    {
+        get => GetColumnOption(DebtorNameColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            DebtorNameColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? DebtorLastNameColumnOption
+    {
+        get => GetColumnOption(DebtorLastNameColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            DebtorLastNameColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? DebtorIbanColumnOption
+    {
+        get => GetColumnOption(DebtorIbanColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            DebtorIbanColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? DebtorBicColumnOption
+    {
+        get => GetColumnOption(DebtorBicColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            DebtorBicColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? AmountColumnOption
+    {
+        get => GetColumnOption(AmountColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            AmountColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? MandateIdColumnOption
+    {
+        get => GetColumnOption(MandateIdColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            MandateIdColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? MandateDateColumnOption
+    {
+        get => GetColumnOption(MandateDateColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            MandateDateColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? CollectionDateColumnOption
+    {
+        get => GetColumnOption(CollectionDateColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            CollectionDateColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? SequenceTypeColumnOption
+    {
+        get => GetColumnOption(SequenceTypeColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            SequenceTypeColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? DescriptionColumnOption
+    {
+        get => GetColumnOption(DescriptionColumn);
+        set
+        {
+            if (value is null)
+                return;
+
+            DescriptionColumn = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? Address1ColumnOption
+    {
+        get => GetColumnOption(Address1Column);
+        set
+        {
+            if (value is null)
+                return;
+
+            Address1Column = NormalizeColumnId(value.Id);
+        }
+    }
+
+    public ColumnOption? Address2ColumnOption
+    {
+        get => GetColumnOption(Address2Column);
+        set
+        {
+            if (value is null)
+                return;
+
+            Address2Column = NormalizeColumnId(value.Id);
+        }
+    }
 
     public string GetAmountBreakdown()
     {

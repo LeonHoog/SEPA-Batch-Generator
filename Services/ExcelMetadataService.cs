@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using SEPA_Batch_Generator.Models;
 
 namespace SEPA_Batch_Generator.Services;
 
@@ -16,7 +17,7 @@ public sealed class ExcelMetadataService
         return workbook.Worksheets.Select(w => w.Name).ToList();
     }
 
-    public static List<string> GetFilterColumns(string excelPath, string sheetName, int headerRows)
+    public static List<ColumnOption> GetColumnOptions(string excelPath, string sheetName, int headerRows)
     {
         if (string.IsNullOrWhiteSpace(excelPath) || !File.Exists(excelPath))
         {
@@ -42,12 +43,12 @@ public sealed class ExcelMetadataService
         var lastColumn = lastUsedCell.Address.ColumnNumber;
         var headerRowNumber = headerRows <= 0 ? 1 : headerRows;
 
-        var options = new List<string>();
+        var options = new List<ColumnOption>();
         for (var col = firstColumn; col <= lastColumn; col++)
         {
             var letter = ToColumnLetter(col);
             var header = worksheet.Cell(headerRowNumber, col).GetString().Trim();
-            options.Add(string.IsNullOrWhiteSpace(header) ? letter : $"{letter} - {header}");
+            options.Add(new ColumnOption(letter, string.IsNullOrWhiteSpace(header) ? letter : $"{letter} - {header}"));
         }
 
         return options;
