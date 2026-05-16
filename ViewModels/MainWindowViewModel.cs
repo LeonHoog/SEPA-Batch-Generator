@@ -208,54 +208,24 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnCreditorIbanChanged(string value) => SaveSettingsQuietly();
     partial void OnCreditorBicChanged(string value) => SaveSettingsQuietly();
     partial void OnCreditorIdChanged(string value) => SaveSettingsQuietly();
-    partial void OnDebtorNameColumnChanged(string value)
+    private void NotifyColumnMappingChanged(string columnPropertyName)
     {
-        OnPropertyChanged(nameof(DebtorNameColumnOption));
-        OnPropertyChanged(nameof(IsDebtorNameColumnInvalid));
+        OnPropertyChanged(columnPropertyName + "Option");
+        OnPropertyChanged("Is" + columnPropertyName + "Invalid");
         SaveSettingsQuietly();
     }
 
-    partial void OnDebtorLastNameColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(DebtorLastNameColumnOption));
-        OnPropertyChanged(nameof(IsDebtorLastNameColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnDebtorIbanColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(DebtorIbanColumnOption));
-        OnPropertyChanged(nameof(IsDebtorIbanColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnDebtorBicColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(DebtorBicColumnOption));
-        OnPropertyChanged(nameof(IsDebtorBicColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnAmountColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(AmountColumnOption));
-        OnPropertyChanged(nameof(IsAmountColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnMandateIdColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(MandateIdColumnOption));
-        OnPropertyChanged(nameof(IsMandateIdColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnMandateDateColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(MandateDateColumnOption));
-        OnPropertyChanged(nameof(IsMandateDateColumnInvalid));
-        SaveSettingsQuietly();
-    }
+    partial void OnDebtorNameColumnChanged(string value) => NotifyColumnMappingChanged(nameof(DebtorNameColumn));
+    partial void OnDebtorLastNameColumnChanged(string value) => NotifyColumnMappingChanged(nameof(DebtorLastNameColumn));
+    partial void OnDebtorIbanColumnChanged(string value) => NotifyColumnMappingChanged(nameof(DebtorIbanColumn));
+    partial void OnDebtorBicColumnChanged(string value) => NotifyColumnMappingChanged(nameof(DebtorBicColumn));
+    partial void OnAmountColumnChanged(string value) => NotifyColumnMappingChanged(nameof(AmountColumn));
+    partial void OnMandateIdColumnChanged(string value) => NotifyColumnMappingChanged(nameof(MandateIdColumn));
+    partial void OnMandateDateColumnChanged(string value) => NotifyColumnMappingChanged(nameof(MandateDateColumn));
+    partial void OnSequenceTypeColumnChanged(string value) => NotifyColumnMappingChanged(nameof(SequenceTypeColumn));
+    partial void OnDescriptionColumnChanged(string value) => NotifyColumnMappingChanged(nameof(DescriptionColumn));
+    partial void OnAddress1ColumnChanged(string value) => NotifyColumnMappingChanged(nameof(Address1Column));
+    partial void OnAddress2ColumnChanged(string value) => NotifyColumnMappingChanged(nameof(Address2Column));
 
     partial void OnCollectionDateColumnChanged(string value)
     {
@@ -264,37 +234,7 @@ public partial class MainWindowViewModel : ViewModelBase
             GeneralCollectionDate = null;
         }
 
-        OnPropertyChanged(nameof(CollectionDateColumnOption));
-        OnPropertyChanged(nameof(IsCollectionDateColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnSequenceTypeColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(SequenceTypeColumnOption));
-        OnPropertyChanged(nameof(IsSequenceTypeColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnDescriptionColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(DescriptionColumnOption));
-        OnPropertyChanged(nameof(IsDescriptionColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnAddress1ColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(Address1ColumnOption));
-        OnPropertyChanged(nameof(IsAddress1ColumnInvalid));
-        SaveSettingsQuietly();
-    }
-
-    partial void OnAddress2ColumnChanged(string value)
-    {
-        OnPropertyChanged(nameof(Address2ColumnOption));
-        OnPropertyChanged(nameof(IsAddress2ColumnInvalid));
-        SaveSettingsQuietly();
+        NotifyColumnMappingChanged(nameof(CollectionDateColumn));
     }
 
     partial void OnBatchNumberChanged(int value) => SaveSettingsQuietly();
@@ -319,46 +259,47 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         var importMessages = new List<string>();
-        var imported = ExcelDirectDebitImporter.Import(
-            ExcelPath,
-            SheetName,
-            HeaderRows,
-            new ExcelLayoutSettings
-            {
-                DebtorNameColumn = DebtorNameColumn,
-                DebtorLastNameColumn = DebtorLastNameColumn,
-                DebtorIbanColumn = DebtorIbanColumn,
-                DebtorBicColumn = DebtorBicColumn,
-                AmountColumn = AmountColumn,
-                MandateIdColumn = MandateIdColumn,
-                MandateDateColumn = MandateDateColumn,
-                CollectionDateColumn = CollectionDateColumn,
-                SequenceTypeColumn = SequenceTypeColumn,
-                DescriptionColumn = DescriptionColumn,
-                Address1Column = Address1Column,
-                Address2Column = Address2Column
-            },
-            FilterColumn,
-            FilterValue,
-            GeneralCollectionDate?.Date,
-            importMessages);
-
-        foreach (var message in importMessages)
-        {
-            AddMessage(message);
-        }
+        var imported = ExcelDirectDebitImporter.Import(ExcelPath, SheetName, HeaderRows, BuildExcelLayoutSettings(), FilterColumn, FilterValue, GeneralCollectionDate?.Date, importMessages);
+        importMessages.ForEach(m => AddMessage(m));
 
         var validationMessages = new List<string>();
         _validRecords = SepaInputValidator.Validate(imported, GeneralDescription, validationMessages);
         TotalAmount = _validRecords.Sum(r => r.Amount);
-        foreach (var message in validationMessages)
+        validationMessages.ForEach(m => AddMessage(m));
+
+        if (_validRecords.Count == 0)
         {
-            AddMessage(message);
+            AddMessage("Geen geldige regels gevonden.");
+            Status = "Inspectie mislukt";
+            WriteLog();
+            return;
         }
 
-        // Detailed summary of import results
-        var rejected = SepaInputValidator.GetLastRejectedRecords();
+        LogImportSummary(imported, validationMessages);
+        InspectionSucceeded = true;
+        Status = validationMessages.Count > 0 ? "Inspectie bevat waarschuwingen" : "Inspectie succesvol";
+        WriteLog();
+    }
 
+    private ExcelLayoutSettings BuildExcelLayoutSettings() => new()
+    {
+        DebtorNameColumn = DebtorNameColumn,
+        DebtorLastNameColumn = DebtorLastNameColumn,
+        DebtorIbanColumn = DebtorIbanColumn,
+        DebtorBicColumn = DebtorBicColumn,
+        AmountColumn = AmountColumn,
+        MandateIdColumn = MandateIdColumn,
+        MandateDateColumn = MandateDateColumn,
+        CollectionDateColumn = CollectionDateColumn,
+        SequenceTypeColumn = SequenceTypeColumn,
+        DescriptionColumn = DescriptionColumn,
+        Address1Column = Address1Column,
+        Address2Column = Address2Column
+    };
+
+    private void LogImportSummary(List<DirectDebitRecord> imported, List<string> validationMessages)
+    {
+        var rejected = SepaInputValidator.GetLastRejectedRecords();
         AddMessage(string.Empty);
         AddMessage("=== Samenvatting Validatie ===");
         AddMessage($"Totaal geïmporteerd: {imported.Count} regels");
@@ -370,48 +311,35 @@ public partial class MainWindowViewModel : ViewModelBase
             AddMessage(string.Empty);
             AddMessage("--- Personen NIET meegenomen in incasso batch ---");
             foreach (var (record, reason) in rejected)
-            {
                 AddMessage($"  Rij {record.RowNumber}: {record.DebtorName} - Reden: {reason}");
-            }
-        }
-
-        if (_validRecords.Count == 0)
-        {
-            AddMessage("Geen geldige regels gevonden.");
-            Status = "Inspectie mislukt";
-            return;
         }
 
         AddMessage(string.Empty);
         AddMessage($"Totaalbedrag (alleen geaccepteerde regels): {TotalAmountDisplay}");
-
-        if (validationMessages.Count > 0)
-        {
-            Status = "Inspectie bevat waarschuwingen";
-            InspectionSucceeded = true;
-        }
-        else
-        {
-            InspectionSucceeded = true;
+        if (validationMessages.Count == 0)
             AddMessage($"Inspectie succesvol: {_validRecords.Count} regels gevalideerd.");
-            Status = "Inspectie succesvol";
-        }
-
-        WriteLog();
     }
 
     [RelayCommand(CanExecute = nameof(CanGenerateXml))]
     private void GenerateXml()
     {
-        var settings = new SepaGenerationSettings
-        {
-            CreditorName = CreditorName.Trim(),
-            CreditorIban = CreditorIban.Replace(" ", string.Empty).ToUpperInvariant(),
-            CreditorBic = CreditorBic.Trim().ToUpperInvariant(),
-            CreditorId = CreditorId.Trim(),
-            GeneralDescription = GeneralDescription.Trim()
-        };
+        GenerateXmlFiles(BuildSepaGenerationSettings());
+        SaveSettings();
+        WriteLog();
+        Status = "XML generatie voltooid";
+    }
 
+    private SepaGenerationSettings BuildSepaGenerationSettings() => new()
+    {
+        CreditorName = CreditorName.Trim(),
+        CreditorIban = CreditorIban.Replace(" ", string.Empty).ToUpperInvariant(),
+        CreditorBic = CreditorBic.Trim().ToUpperInvariant(),
+        CreditorId = CreditorId.Trim(),
+        GeneralDescription = GeneralDescription.Trim()
+    };
+
+    private void GenerateXmlFiles(SepaGenerationSettings settings)
+    {
         var groups = _validRecords
             .GroupBy(r => new { r.CollectionDate.Date, Seq = r.SequenceType })
             .OrderBy(g => g.Key.Date)
@@ -424,10 +352,6 @@ public partial class MainWindowViewModel : ViewModelBase
             AddMessage($"XML aangemaakt: {xmlPath}");
             BatchNumber++;
         }
-
-        SaveSettings();
-        WriteLog();
-        Status = "XML generatie voltooid";
     }
 
     private bool CanGenerateXml() => InspectionSucceeded;
@@ -593,19 +517,23 @@ public partial class MainWindowViewModel : ViewModelBase
         CreditorIban = Get(values, nameof(CreditorIban), CreditorIban);
         CreditorBic = Get(values, nameof(CreditorBic), CreditorBic);
         CreditorId = Get(values, nameof(CreditorId), CreditorId);
-        DebtorNameColumn = NormalizeColumnId(Get(values, nameof(DebtorNameColumn), DebtorNameColumn));
-        DebtorLastNameColumn = NormalizeColumnId(Get(values, nameof(DebtorLastNameColumn), DebtorLastNameColumn));
-        DebtorIbanColumn = NormalizeColumnId(Get(values, nameof(DebtorIbanColumn), DebtorIbanColumn));
-        DebtorBicColumn = NormalizeColumnId(Get(values, nameof(DebtorBicColumn), DebtorBicColumn));
-        AmountColumn = NormalizeColumnId(Get(values, nameof(AmountColumn), AmountColumn));
-        MandateIdColumn = NormalizeColumnId(Get(values, nameof(MandateIdColumn), MandateIdColumn));
-        MandateDateColumn = NormalizeColumnId(Get(values, nameof(MandateDateColumn), MandateDateColumn));
-        CollectionDateColumn = NormalizeColumnId(Get(values, nameof(CollectionDateColumn), CollectionDateColumn));
-        SequenceTypeColumn = NormalizeColumnId(Get(values, nameof(SequenceTypeColumn), SequenceTypeColumn));
-        DescriptionColumn = NormalizeColumnId(Get(values, nameof(DescriptionColumn), DescriptionColumn));
-        Address1Column = NormalizeColumnId(Get(values, nameof(Address1Column), Address1Column));
-        Address2Column = NormalizeColumnId(Get(values, nameof(Address2Column), Address2Column));
+        LoadColumnMappings(values);
         BatchNumber = ParseInt(Get(values, nameof(BatchNumber), BatchNumber.ToString()), BatchNumber);
+    }
+
+    private void LoadColumnMappings(Dictionary<string, string> values)
+    {
+        var columnProperties = new[] { nameof(DebtorNameColumn), nameof(DebtorLastNameColumn), nameof(DebtorIbanColumn), nameof(DebtorBicColumn), nameof(AmountColumn), nameof(MandateIdColumn), nameof(MandateDateColumn), nameof(CollectionDateColumn), nameof(SequenceTypeColumn), nameof(DescriptionColumn), nameof(Address1Column), nameof(Address2Column) };
+        foreach (var propName in columnProperties)
+        {
+            var prop = GetType().GetProperty(propName);
+            if (prop != null)
+            {
+                var currentValue = (string?)prop.GetValue(this);
+                var savedValue = Get(values, propName, currentValue ?? string.Empty);
+                prop.SetValue(this, NormalizeColumnId(savedValue));
+            }
+        }
     }
 
     private void ReloadSettingsFromIni()
@@ -655,26 +583,28 @@ public partial class MainWindowViewModel : ViewModelBase
             [nameof(CreditorIban)] = CreditorIban,
             [nameof(CreditorBic)] = CreditorBic,
             [nameof(CreditorId)] = CreditorId,
-            [nameof(DebtorNameColumn)] = DebtorNameColumn,
-            [nameof(DebtorLastNameColumn)] = DebtorLastNameColumn,
-            [nameof(DebtorIbanColumn)] = DebtorIbanColumn,
-            [nameof(DebtorBicColumn)] = DebtorBicColumn,
-            [nameof(AmountColumn)] = AmountColumn,
-            [nameof(MandateIdColumn)] = MandateIdColumn,
-            [nameof(MandateDateColumn)] = MandateDateColumn,
-            [nameof(CollectionDateColumn)] = CollectionDateColumn,
-            [nameof(SequenceTypeColumn)] = SequenceTypeColumn,
-            [nameof(DescriptionColumn)] = DescriptionColumn,
-            [nameof(Address1Column)] = Address1Column,
-            [nameof(Address2Column)] = Address2Column,
             [nameof(BatchNumber)] = BatchNumber.ToString()
         };
 
+        SaveColumnMappings(values);
         IniSettingsService.Save(_settingsPath, values);
 
         if (addMessage)
         {
             AddMessage($"Instellingen opgeslagen in {_settingsPath}");
+        }
+    }
+
+    private void SaveColumnMappings(Dictionary<string, string> values)
+    {
+        var columnProperties = new[] { nameof(DebtorNameColumn), nameof(DebtorLastNameColumn), nameof(DebtorIbanColumn), nameof(DebtorBicColumn), nameof(AmountColumn), nameof(MandateIdColumn), nameof(MandateDateColumn), nameof(CollectionDateColumn), nameof(SequenceTypeColumn), nameof(DescriptionColumn), nameof(Address1Column), nameof(Address2Column) };
+        foreach (var propName in columnProperties)
+        {
+            var prop = GetType().GetProperty(propName);
+            if (prop != null)
+            {
+                values[propName] = (string?)prop.GetValue(this) ?? string.Empty;
+            }
         }
     }
 
@@ -732,19 +662,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void NotifyColumnSelectionBindingsChanged()
     {
-        OnPropertyChanged(nameof(FilterColumnOption));
-        OnPropertyChanged(nameof(DebtorNameColumnOption));
-        OnPropertyChanged(nameof(DebtorLastNameColumnOption));
-        OnPropertyChanged(nameof(DebtorIbanColumnOption));
-        OnPropertyChanged(nameof(DebtorBicColumnOption));
-        OnPropertyChanged(nameof(AmountColumnOption));
-        OnPropertyChanged(nameof(MandateIdColumnOption));
-        OnPropertyChanged(nameof(MandateDateColumnOption));
-        OnPropertyChanged(nameof(CollectionDateColumnOption));
-        OnPropertyChanged(nameof(SequenceTypeColumnOption));
-        OnPropertyChanged(nameof(DescriptionColumnOption));
-        OnPropertyChanged(nameof(Address1ColumnOption));
-        OnPropertyChanged(nameof(Address2ColumnOption));
+        foreach (var prop in GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            if (prop.Name.EndsWith("Option") && prop.PropertyType.Name == "ColumnOption")
+            {
+                OnPropertyChanged(prop.Name);
+            }
+        }
     }
 
     private bool IsRequiredColumnInvalid(string? column)
@@ -753,20 +677,21 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool IsOptionalColumnInvalid(string? column)
         => !string.IsNullOrWhiteSpace(column) && GetColumnOption(column) is null;
 
+    private void SetColumnOptionProperty(string backingPropertyName, ColumnOption? value)
+    {
+        if (value is null) return;
+        GetType().GetProperty(backingPropertyName)?.SetValue(this, NormalizeColumnId(value.Id));
+    }
+
     private void NotifyColumnMappingValidationChanged()
     {
-        OnPropertyChanged(nameof(IsDebtorNameColumnInvalid));
-        OnPropertyChanged(nameof(IsDebtorLastNameColumnInvalid));
-        OnPropertyChanged(nameof(IsDebtorIbanColumnInvalid));
-        OnPropertyChanged(nameof(IsDebtorBicColumnInvalid));
-        OnPropertyChanged(nameof(IsAmountColumnInvalid));
-        OnPropertyChanged(nameof(IsMandateIdColumnInvalid));
-        OnPropertyChanged(nameof(IsMandateDateColumnInvalid));
-        OnPropertyChanged(nameof(IsCollectionDateColumnInvalid));
-        OnPropertyChanged(nameof(IsSequenceTypeColumnInvalid));
-        OnPropertyChanged(nameof(IsDescriptionColumnInvalid));
-        OnPropertyChanged(nameof(IsAddress1ColumnInvalid));
-        OnPropertyChanged(nameof(IsAddress2ColumnInvalid));
+        foreach (var prop in GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            if (prop.Name.StartsWith("Is") && prop.Name.EndsWith("Invalid") && prop.PropertyType == typeof(bool))
+            {
+                OnPropertyChanged(prop.Name);
+            }
+        }
     }
 
     public bool IsDebtorNameColumnInvalid => IsRequiredColumnInvalid(DebtorNameColumn);
@@ -782,161 +707,19 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsAddress1ColumnInvalid => IsOptionalColumnInvalid(Address1Column);
     public bool IsAddress2ColumnInvalid => IsOptionalColumnInvalid(Address2Column);
 
-    public ColumnOption? FilterColumnOption
-    {
-        get => GetColumnOption(FilterColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            FilterColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? DebtorNameColumnOption
-    {
-        get => GetColumnOption(DebtorNameColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            DebtorNameColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? DebtorLastNameColumnOption
-    {
-        get => GetColumnOption(DebtorLastNameColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            DebtorLastNameColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? DebtorIbanColumnOption
-    {
-        get => GetColumnOption(DebtorIbanColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            DebtorIbanColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? DebtorBicColumnOption
-    {
-        get => GetColumnOption(DebtorBicColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            DebtorBicColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? AmountColumnOption
-    {
-        get => GetColumnOption(AmountColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            AmountColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? MandateIdColumnOption
-    {
-        get => GetColumnOption(MandateIdColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            MandateIdColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? MandateDateColumnOption
-    {
-        get => GetColumnOption(MandateDateColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            MandateDateColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? CollectionDateColumnOption
-    {
-        get => GetColumnOption(CollectionDateColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            CollectionDateColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? SequenceTypeColumnOption
-    {
-        get => GetColumnOption(SequenceTypeColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            SequenceTypeColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? DescriptionColumnOption
-    {
-        get => GetColumnOption(DescriptionColumn);
-        set
-        {
-            if (value is null)
-                return;
-
-            DescriptionColumn = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? Address1ColumnOption
-    {
-        get => GetColumnOption(Address1Column);
-        set
-        {
-            if (value is null)
-                return;
-
-            Address1Column = NormalizeColumnId(value.Id);
-        }
-    }
-
-    public ColumnOption? Address2ColumnOption
-    {
-        get => GetColumnOption(Address2Column);
-        set
-        {
-            if (value is null)
-                return;
-
-            Address2Column = NormalizeColumnId(value.Id);
-        }
-    }
+    public ColumnOption? FilterColumnOption { get => GetColumnOption(FilterColumn); set => SetColumnOptionProperty(nameof(FilterColumn), value); }
+    public ColumnOption? DebtorNameColumnOption { get => GetColumnOption(DebtorNameColumn); set => SetColumnOptionProperty(nameof(DebtorNameColumn), value); }
+    public ColumnOption? DebtorLastNameColumnOption { get => GetColumnOption(DebtorLastNameColumn); set => SetColumnOptionProperty(nameof(DebtorLastNameColumn), value); }
+    public ColumnOption? DebtorIbanColumnOption { get => GetColumnOption(DebtorIbanColumn); set => SetColumnOptionProperty(nameof(DebtorIbanColumn), value); }
+    public ColumnOption? DebtorBicColumnOption { get => GetColumnOption(DebtorBicColumn); set => SetColumnOptionProperty(nameof(DebtorBicColumn), value); }
+    public ColumnOption? AmountColumnOption { get => GetColumnOption(AmountColumn); set => SetColumnOptionProperty(nameof(AmountColumn), value); }
+    public ColumnOption? MandateIdColumnOption { get => GetColumnOption(MandateIdColumn); set => SetColumnOptionProperty(nameof(MandateIdColumn), value); }
+    public ColumnOption? MandateDateColumnOption { get => GetColumnOption(MandateDateColumn); set => SetColumnOptionProperty(nameof(MandateDateColumn), value); }
+    public ColumnOption? CollectionDateColumnOption { get => GetColumnOption(CollectionDateColumn); set => SetColumnOptionProperty(nameof(CollectionDateColumn), value); }
+    public ColumnOption? SequenceTypeColumnOption { get => GetColumnOption(SequenceTypeColumn); set => SetColumnOptionProperty(nameof(SequenceTypeColumn), value); }
+    public ColumnOption? DescriptionColumnOption { get => GetColumnOption(DescriptionColumn); set => SetColumnOptionProperty(nameof(DescriptionColumn), value); }
+    public ColumnOption? Address1ColumnOption { get => GetColumnOption(Address1Column); set => SetColumnOptionProperty(nameof(Address1Column), value); }
+    public ColumnOption? Address2ColumnOption { get => GetColumnOption(Address2Column); set => SetColumnOptionProperty(nameof(Address2Column), value); }
 
     public string GetAmountBreakdown()
     {
