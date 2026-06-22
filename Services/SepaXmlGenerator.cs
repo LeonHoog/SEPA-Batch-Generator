@@ -12,22 +12,25 @@ public sealed class SepaXmlGenerator
         string outputDirectory,
         int batchNumber)
     {
-        var first = records[0];
-        var requestedCollectionDate = first.CollectionDate.Date;
-        var sequenceType = first.SequenceType;
+        DirectDebitRecord first = records[0];
+        DateTime requestedCollectionDate = first.CollectionDate.Date;
+        string sequenceType = first.SequenceType;
 
         Directory.CreateDirectory(outputDirectory);
 
-        var fileName = $"Incasso_dd_{requestedCollectionDate:yyyy-MM-dd}_{sequenceType}_08_{batchNumber:D3}.xml";
-        var path = Path.Combine(outputDirectory, fileName);
+        string fileName = $"Incasso_dd_{requestedCollectionDate:yyyy-MM-dd}_{sequenceType}_08_{batchNumber:D3}.xml";
+        string path = Path.Combine(outputDirectory, fileName);
 
         XNamespace ns = "urn:iso:std:iso:20022:tech:xsd:pain.008.001.08";
 
-        var now = DateTime.UtcNow;
-        var messageId = $"MSG-{now:yyyyMMddHHmmss}-{batchNumber:D3}";
-        var paymentInfoId = $"PMT-{requestedCollectionDate:yyyyMMdd}-{sequenceType}-{batchNumber:D3}";
+        DateTime now = DateTime.UtcNow;
+        string messageId = $"MSG-{now:yyyyMMddHHmmss}-{batchNumber:D3}";
+        string paymentInfoId = $"PMT-{requestedCollectionDate:yyyyMMdd}-{sequenceType}-{batchNumber:D3}";
 
-        var document = new XDocument(
+        // Calculate control sum with explicit rounding to 2 decimal places for SEPA compliance
+        decimal controlSum = Math.Round(records.Sum(r => r.Amount), 2, MidpointRounding.AwayFromZero);
+
+        XDocument document = new(
             new XDeclaration("1.0", "UTF-8", "yes"),
             new XElement(ns + "Document",
                 new XElement(ns + "CstmrDrctDbtInitn",
@@ -35,7 +38,7 @@ public sealed class SepaXmlGenerator
                         new XElement(ns + "MsgId", messageId),
                         new XElement(ns + "CreDtTm", now.ToString("yyyy-MM-ddTHH:mm:ss")),
                         new XElement(ns + "NbOfTxs", records.Count),
-                        new XElement(ns + "CtrlSum", records.Sum(r => r.Amount).ToString("0.00", CultureInfo.InvariantCulture)),
+                        new XElement(ns + "CtrlSum", controlSum.ToString("0.00", CultureInfo.InvariantCulture)),
                         new XElement(ns + "InitgPty",
                             new XElement(ns + "Nm", settings.CreditorName)
                         )
@@ -44,7 +47,7 @@ public sealed class SepaXmlGenerator
                         new XElement(ns + "PmtInfId", paymentInfoId),
                         new XElement(ns + "PmtMtd", "DD"),
                         new XElement(ns + "NbOfTxs", records.Count),
-                        new XElement(ns + "CtrlSum", records.Sum(r => r.Amount).ToString("0.00", CultureInfo.InvariantCulture)),
+                        new XElement(ns + "CtrlSum", controlSum.ToString("0.00", CultureInfo.InvariantCulture)),
                         new XElement(ns + "PmtTpInf",
                             new XElement(ns + "SvcLvl", new XElement(ns + "Cd", "SEPA")),
                             new XElement(ns + "LclInstrm", new XElement(ns + "Cd", "CORE")),
@@ -67,8 +70,8 @@ public sealed class SepaXmlGenerator
                         ),
                         records.Select((record, index) =>
                         {
-                            var endToEnd = $"E2E-{requestedCollectionDate:yyyyMMdd}-{batchNumber:D3}-{index + 1:D5}";
-                            var remittance = SepaInputValidator.BuildDescription(settings.GeneralDescription, record.DescriptionPart);
+                            string endToEnd = $"E2E-{requestedCollectionDate:yyyyMMdd}-{batchNumber:D3}-{index + 1:D5}";
+                            string remittance = TextProcessor.BuildDescription(settings.GeneralDescription, record.DescriptionPart);
 
                             return new XElement(ns + "DrctDbtTxInf",
                                 new XElement(ns + "PmtId", new XElement(ns + "EndToEndId", endToEnd)),

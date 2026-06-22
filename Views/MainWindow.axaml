@@ -311,7 +311,7 @@
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Omschrijving" Classes="field-label"/>
+                                    <TextBlock Text="Omschrijving (optioneel)" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DescriptionColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDescriptionColumnInvalid}"/>
                                 </StackPanel>
 
