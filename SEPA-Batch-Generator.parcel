@@ -7,7 +7,11 @@
         "AssemblyName": "SEPA-Batch-Generator"
     },
     "LinuxSettings": {
-        "CreateBinSymlink": "True"
+        "InstallDirName": "sepa-batch-generator",
+        "AppIcon": "Assets/logo.ico",
+        "Maintainer": "",
+        "CreateBinSymlink": "True",
+        "DesktopCategory": "Office"
     },
     "Win32Settings": {
         "IncludeUninstaller": "True"
