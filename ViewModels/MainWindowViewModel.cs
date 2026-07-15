@@ -49,10 +49,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string creditorId = string.Empty;
     [ObservableProperty] private int batchNumber = 1;
     [ObservableProperty] private bool inspectionSucceeded;
-    [ObservableProperty] private string status = "Vul de instellingen in en start met Inspecteer.";
+    [ObservableProperty] private string status = Localization.Get("StatusInitial");
     [ObservableProperty] private decimal totalAmount;
 
-    public string TotalAmountDisplay => TotalAmount.ToString("C", new CultureInfo("nl-NL"));
+    public string TotalAmountDisplay => TotalAmount.ToString("C", CultureInfo.CurrentCulture);
+
+    public LocalizationService Loc => LocalizationService.Instance;
 
     public MainWindowViewModel()
     {
@@ -156,7 +158,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (!ValidateGeneralInputs())
         {
-            Status = "Inspectie mislukt";
+            Status = Localization.Get("StatusInspectFailed");
             return;
         }
 
@@ -174,38 +176,38 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_validRecords.Count == 0)
         {
-            AddMessage("Geen geldige regels gevonden.");
-            Status = "Inspectie mislukt";
+            AddMessage(Localization.Get("NoValidRecordsFound"));
+            Status = Localization.Get("StatusInspectFailed");
             WriteLog();
             return;
         }
 
         LogImportSummary(imported, validationMessages);
         InspectionSucceeded = true;
-        Status = validationMessages.Count > 0 ? "Inspectie bevat waarschuwingen" : "Inspectie succesvol";
+        Status = validationMessages.Count > 0 ? Localization.Get("StatusInspectContainsWarnings") : Localization.Get("StatusInspectSuccess");
         WriteLog();
     }
 
     private void LogImportSummary(List<DirectDebitRecord> imported, List<string> validationMessages)
     {
         AddMessage(string.Empty);
-        AddMessage("=== Samenvatting Validatie ===");
-        AddMessage($"Totaal geïmporteerd: {imported.Count} regels");
-        AddMessage($"Geaccepteerd: {_validRecords.Count} regels");
-        AddMessage($"Niet meegenomen: {_lastValidationResult.Rejected.Count} regels");
+        AddMessage(Localization.Get("LogSummaryHeader"));
+        AddMessage(string.Format(Localization.Get("LogImported"), imported.Count));
+        AddMessage(string.Format(Localization.Get("LogAccepted"), _validRecords.Count));
+        AddMessage(string.Format(Localization.Get("LogRejected"), _lastValidationResult.Rejected.Count));
 
         if (_lastValidationResult.Rejected.Count > 0)
         {
             AddMessage(string.Empty);
-            AddMessage("--- Personen NIET meegenomen in incasso batch ---");
+            AddMessage(Localization.Get("LogRejectedHeader"));
             foreach ((DirectDebitRecord? record, string? reason) in _lastValidationResult.Rejected)
-                AddMessage($"  Rij {record.RowNumber}: {record.DebtorName} - Reden: {reason}");
+                AddMessage(string.Format(Localization.Get("LogRejectedRow"), record.RowNumber, record.DebtorName, reason));
         }
 
         AddMessage(string.Empty);
-        AddMessage($"Totaalbedrag (alleen geaccepteerde regels): {TotalAmountDisplay}");
+        AddMessage(string.Format(Localization.Get("LogTotalAmount"), TotalAmountDisplay));
         if (validationMessages.Count == 0)
-            AddMessage($"Inspectie succesvol: {_validRecords.Count} regels gevalideerd.");
+            AddMessage(string.Format(Localization.Get("LogInspectionSuccessWithCount"), _validRecords.Count));
     }
 
     [RelayCommand(CanExecute = nameof(CanGenerateXml))]
@@ -214,7 +216,7 @@ public partial class MainWindowViewModel : ViewModelBase
         GenerateXmlFiles();
         SaveSettings();
         WriteLog();
-        Status = "XML generatie voltooid";
+        Status = Localization.Get("StatusXmlGenerationCompleted");
     }
 
     private void GenerateXmlFiles()
@@ -237,7 +239,7 @@ public partial class MainWindowViewModel : ViewModelBase
         foreach (var group in groups)
         {
             string xmlPath = SepaXmlGenerator.Generate(group.ToList(), settings, OutputFolder, BatchNumber);
-            AddMessage($"XML aangemaakt: {xmlPath}");
+            AddMessage(string.Format(Localization.Get("XmlCreated"), xmlPath));
             BatchNumber++;
         }
     }
@@ -250,32 +252,32 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (string.IsNullOrWhiteSpace(ExcelPath))
         {
-            AddMessage("Excel pad ontbreekt.");
-            ok = false;
+            AddMessage(Localization.Get("Validate_ExcelPathMissing"));
+            return false; // No need to continue when there's no input data provided
         }
 
         if (!GeneralCollectionDate.HasValue && string.IsNullOrWhiteSpace(_settings.ColumnMappings["CollectionDateColumn"]))
         {
-            AddMessage("Kies een algemene incassodatum of stel de Excel-kolom voor incassodatum in.");
+            AddMessage(Localization.Get("Validate_CollectionDateMissing"));
             ok = false;
         }
 
         if (!CanEditExcelMapping)
         {
-            AddMessage("Wacht tot het Excel-bestand en werkblad volledig zijn geladen voordat je de Excel Mapping gebruikt.");
+            AddMessage(Localization.Get("Validate_WaitExcelLoad"));
             ok = false;
         }
 
         if (GeneralCollectionDate.HasValue && GeneralCollectionDate.Value.Date < MinimumCollectionDate.Date)
         {
-            AddMessage($"De algemene incassodatum moet vanaf {MinimumCollectionDate:dd-MM-yyyy} zijn.");
+            AddMessage(string.Format(Localization.Get("Validate_CollectionDateTooEarly"), MinimumCollectionDate.ToString("dd-MM-yyyy")));
             ok = false;
         }
 
         if (string.IsNullOrWhiteSpace(CreditorName) || string.IsNullOrWhiteSpace(CreditorIban) || 
             string.IsNullOrWhiteSpace(CreditorBic) || string.IsNullOrWhiteSpace(CreditorId))
         {
-            AddMessage("Crediteurgegevens zijn niet volledig ingevuld.");
+            AddMessage(Localization.Get("Validate_CreditorDataIncomplete"));
             ok = false;
         }
 
@@ -307,7 +309,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (loadWorksheets && !string.Equals(_lastOpenElsewhereWarningPath, ExcelPath, StringComparison.OrdinalIgnoreCase)
                 && ExcelMetadataService.IsFileOpenElsewhere(ExcelPath))
             {
-                PendingWarningMessage = "Het geselecteerde Excel-bestand lijkt al geopend in een ander programma. De gegevens worden wel gewoon ingelezen (alleen-lezen).";
+                PendingWarningMessage = Localization.Get("ExcelOpenElsewhereWarning");
                 _lastOpenElsewhereWarningPath = ExcelPath;
             }
 
@@ -408,7 +410,7 @@ public partial class MainWindowViewModel : ViewModelBase
             FilterColumnOptions.Clear();
             ColumnOptions.Clear();
             OnPropertyChanged(nameof(CanEditExcelMapping));
-            AddMessage($"Kolommen uitlezen mislukt: {ex.Message}");
+            AddMessage(string.Format(Localization.Get("LoadingColumnsFailed"), ex.Message));
         }
         finally
         {
@@ -463,7 +465,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _settings.Save();
 
         if (addMessage)
-            AddMessage($"Instellingen opgeslagen in {Path.Combine(AppContext.BaseDirectory, "settings.ini")}");
+            AddMessage(string.Format(Localization.Get("SettingsSaved"), Path.Combine(AppContext.BaseDirectory, "settings.ini")));
     }
 
     private void ApplySettingsToViewModel(SettingsManager settings)
@@ -501,7 +503,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Directory.CreateDirectory(directory);
 
         StringBuilder sb = new();
-        sb.AppendLine($"Tijd: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine(string.Format(Localization.Get("LogTimePrefix"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
         foreach (string message in Messages)
             sb.AppendLine(message);
 
@@ -513,23 +515,23 @@ public partial class MainWindowViewModel : ViewModelBase
     public string GetAmountBreakdown()
     {
         if (_validRecords.Count == 0)
-            return "Geen geldige records beschikbaar.";
+            return Localization.Get("NoValidRecordsAvailable");
 
         StringBuilder sb = new();
-        sb.AppendLine("=== Overzicht overboeking per persoon ===");
+        sb.AppendLine(Localization.Get("AmountOverviewHeader"));
         sb.AppendLine();
 
         List<DirectDebitRecord> sorted = _validRecords.OrderByDescending(r => r.Amount).ToList();
         foreach (DirectDebitRecord? record in sorted)
         {
-            string amount = record.Amount.ToString("0.00", CultureInfo.GetCultureInfo("nl-NL"));
-            sb.AppendLine($"{record.DebtorName,-50} € {amount,12}");
+            string amount = record.Amount.ToString("0.00", CultureInfo.CurrentCulture);
+                sb.AppendLine($"{record.DebtorName,-50} € {amount,12}");
         }
 
         sb.AppendLine();
         sb.AppendLine(new string('-', 65));
-        string total = TotalAmount.ToString("0.00", CultureInfo.GetCultureInfo("nl-NL"));
-        sb.AppendLine($"{"TOTAAL",-50} € {total,12}");
+        string total = TotalAmount.ToString("0.00", CultureInfo.CurrentCulture);
+        sb.AppendLine($"{Localization.Get("TOTAL_LABEL"),-50} € {total,12}");
 
         return sb.ToString();
     }

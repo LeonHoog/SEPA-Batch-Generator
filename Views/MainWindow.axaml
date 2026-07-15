@@ -76,6 +76,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="False"/>
         </Style>
 
         <Style Selector="DatePicker.form-control">
@@ -140,8 +141,8 @@
         <Border Classes="topbar">
             <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="12">
                 <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10">
-                    <Button Classes="secondary-action" Content="Inspecteer" Command="{Binding InspectCommand}"/>
-                    <Button Classes="primary-action" Content="Genereer Batch Bestand" Command="{Binding GenerateXmlCommand}"/>
+                    <Button Classes="secondary-action" Content="{Binding Loc[InspectButtonText]}" Command="{Binding InspectCommand}"/>
+                    <Button Classes="primary-action" Content="{Binding Loc[GenerateButtonText]}" Command="{Binding GenerateXmlCommand}"/>
                 </StackPanel>
 
                 <Border Grid.Row="0" Grid.Column="1" Classes="status-chip" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -151,7 +152,7 @@
                 <TextBlock Grid.Row="1"
                            Grid.ColumnSpan="2"
                            Classes="helper-text"
-                           Text="Voer instellingen in, controleer met Inspecteer en genereer daarna het batchbestand."/>
+                           Text="{Binding Loc[TopHelperText]}"/>
             </Grid>
         </Border>
 
@@ -159,19 +160,43 @@
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="18" RowSpacing="18">
                 <Border Grid.Row="0" Grid.Column="0" Classes="card">
                     <StackPanel Spacing="14">
-                        <TextBlock Text="General" Classes="section-title"/>
+						<!-- General Settings -->
+                        <TextBlock Text="{Binding Loc[GeneralSectionTitle]}" Classes="section-title"/>
 
+						<StackPanel Spacing="6">
+							<TextBlock Text="{Binding Loc[CollectionDateLabel]}" Classes="field-label"/>
+							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+								<DatePicker Grid.Column="0"
+											Classes="form-control"
+											SelectedDate="{Binding GeneralCollectionDate}"/>
+								<Button Grid.Column="1"
+										Classes="secondary-action"
+										Content="{Binding Loc[ClearButtonText]}"
+										IsEnabled="{Binding HasGeneralCollectionDate}"
+										Command="{Binding ClearGeneralCollectionDateCommand}"/>
+							</Grid>
+						</StackPanel>
+
+						<StackPanel Spacing="6">
+							<TextBlock Text="{Binding Loc[GeneralDescriptionLabel]}" 
+									   Classes="field-label"/>
+							<TextBox Classes="form-control" Text="{Binding GeneralDescription}"/>
+						</StackPanel>
+
+						<Separator/>
+
+						<!-- Input Data -->						
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Excel bestand" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[ExcelFileLabel]}" Classes="field-label"/>
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                 <TextBox Grid.Column="0" Classes="form-control" Text="{Binding ExcelPath}"/>
-                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseExcelFile_Click"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="{Binding Loc[BrowseButtonText]}" Click="BrowseExcelFile_Click"/>
                             </Grid>
-                            <TextBlock Classes="helper-text" Text="Selecteer het bronbestand voor de incasso-import."/>
+                            <TextBlock Classes="helper-text" Text="{Binding Loc[ExcelSelectHelper]}"/>
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Werkbladnaam" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[WorksheetNameLabel]}" Classes="field-label"/>
                             <ComboBox Classes="form-control"
                                       IsEnabled="{Binding HasExcelSelected}"
                                       ItemsSource="{Binding WorksheetNames}"
@@ -179,34 +204,19 @@
                                       IsEditable="False" />
                         </StackPanel>
 
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                            <StackPanel Grid.Column="0" Spacing="6">
-                                <TextBlock Text="Aantal kopregels" Classes="field-label"/>
-                                <NumericUpDown Classes="form-control"
-                                               IsEnabled="{Binding HasExcelSelected}"
-                                               Value="{Binding HeaderRows}"
-                                               Minimum="0"
-                                               Maximum="100"/>
-                            </StackPanel>
 
-                            <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Text="Incassodatum" Classes="field-label"/>
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                    <DatePicker Grid.Column="0"
-                                                Classes="form-control"
-                                                SelectedDate="{Binding GeneralCollectionDate}"/>
-                                    <Button Grid.Column="1"
-                                            Classes="secondary-action"
-                                            Content="Wissen"
-                                            IsVisible="{Binding HasGeneralCollectionDate}"
-                                            Command="{Binding ClearGeneralCollectionDateCommand}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Grid>
+						<StackPanel Grid.Column="0" Spacing="6">
+							<TextBlock Text="{Binding Loc[HeaderRowsLabel]}" Classes="field-label"/>
+							<NumericUpDown Classes="form-control"
+										   IsEnabled="{Binding HasExcelSelected}"
+										   Value="{Binding HeaderRows}"
+										   Minimum="0"
+										   Maximum="100"/>
+						</StackPanel>
 
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+						<Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                             <StackPanel Grid.Column="0" Spacing="6">
-                                <TextBlock Text="Filter kolom" Classes="field-label"/>
+                                <TextBlock Text="{Binding Loc[FilterColumnLabel]}" Classes="field-label"/>
                                 <ComboBox Classes="form-control"
                                           IsEnabled="{Binding HasExcelSelected}"
                                           ItemsSource="{Binding FilterColumnOptions}"
@@ -215,119 +225,119 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Text="Filter waarde" Classes="field-label"/>
+                                <TextBlock Text="{Binding Loc[FilterValueLabel]}" Classes="field-label"/>
                                 <TextBox Classes="form-control"
                                          IsEnabled="{Binding HasExcelSelected}"
                                          Text="{Binding FilterValue}"/>
                             </StackPanel>
                         </Grid>
-
-                        <StackPanel Spacing="6">
-                            <TextBlock Text="Algemene omschrijving" Classes="field-label"/>
-                            <TextBox Classes="form-control" Text="{Binding GeneralDescription}"/>
-                        </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Row="0" Grid.Column="1" Classes="card">
                     <StackPanel Spacing="14">
-                        <TextBlock Text="Creditor" Classes="section-title"/>
+                        <TextBlock Text="{Binding Loc[CreditorSectionTitle]}" Classes="section-title"/>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Naam" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[NameLabel]}" Classes="field-label"/>
                             <TextBox Classes="form-control" Text="{Binding CreditorName}"/>
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="IBAN" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[IBANLabel]}" Classes="field-label"/>
                             <TextBox Classes="form-control" Text="{Binding CreditorIban}"/>
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="BIC" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[BICLabel]}" Classes="field-label"/>
                             <TextBox Classes="form-control" Text="{Binding CreditorBic}"/>
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="ZZZ (code machtiging tot incasseren)" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[CreditorIdLabel]}" Classes="field-label"/>
                             <TextBox Classes="form-control" Text="{Binding CreditorId}"/>
-                            <TextBlock Classes="helper-text" Text="Gebruik het geregistreerde crediteur-ID van de incassant."/>
+                            <TextBlock Classes="helper-text" Text="{Binding Loc[CreditorIdHelper]}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card" IsEnabled="{Binding CanEditExcelMapping}">
                     <StackPanel Spacing="14">
-                        <TextBlock Text="Excel Mapping" Classes="section-title"/>
-                        <TextBlock Classes="helper-text" Text="Koppel elke vereiste waarde aan de juiste kolom in het Excel-bestand."/>
+                        <TextBlock Text="{Binding Loc[ExcelMappingSectionTitle]}" Classes="section-title"/>
+                            <TextBlock Classes="helper-text" Text="{Binding Loc[ExcelMappingHelper]}"/>
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                             <StackPanel Grid.Column="0" Spacing="10">
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Naam debiteur" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[DebtorNameLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorNameColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Achternaam debiteur (optioneel)" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[DebtorLastNameLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorLastNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorLastNameColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="IBAN debiteur" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[DebtorIbanLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorIbanColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorIbanColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="BIC debiteur (optioneel)" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[DebtorBicLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorBicColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorBicColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Bedrag" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[AmountLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding AmountColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAmountColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Machtigingskenmerk" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[MandateIdLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateIdColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateIdColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Mandaatdatum" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[MandateDateLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateDateColumnInvalid}"/>
                                 </StackPanel>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="10">
                                 <StackPanel Spacing="6" IsVisible="{Binding ShowCollectionDateColumnMapping}">
-                                    <TextBlock Text="Incassodatum" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[CollectionDateLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding CollectionDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsCollectionDateColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Sequence Type" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[SequenceTypeLabel]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding SequenceTypeColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsSequenceTypeColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Omschrijving (optioneel)" Classes="field-label"/>
+									<TextBlock Text="{Binding Loc[DescriptionOptionalLabel]}" 
+									   Classes="field-label"
+									   IsVisible="{Binding GeneralDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+							        <TextBlock Text="{Binding Loc[DescriptionLabel]}" 
+									           Classes="field-label"
+									           IsVisible="{Binding GeneralDescription, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DescriptionColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDescriptionColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Adres1 (optioneel)" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[Address1Label]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address1ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress1ColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Adres2 (optioneel)" Classes="field-label"/>
+                                    <TextBlock Text="{Binding Loc[Address2Label]}" Classes="field-label"/>
                                     <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address2ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress2ColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Batchnummer" Classes="field-label"/>
-                                    <NumericUpDown Classes="form-control" Value="{Binding BatchNumber}" Minimum="1" Maximum="999999"/>
+                                    <TextBlock Text="{Binding Loc[BatchNumberLabel]}" Classes="field-label"/>
+                                        <NumericUpDown Classes="form-control" Value="{Binding BatchNumber}" Minimum="1" Maximum="999999"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -336,30 +346,30 @@
 
                 <Border Grid.Row="2" Grid.ColumnSpan="2" Classes="card">
                     <StackPanel Spacing="14">
-                        <TextBlock Text="Output" Classes="section-title"/>
+                        <TextBlock Text="{Binding Loc[OutputSectionTitle]}" Classes="section-title"/>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Output map" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[OutputFolderLabel]}" Classes="field-label"/>
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                 <TextBox Grid.Column="0" Classes="form-control" Text="{Binding OutputFolder}"/>
-                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseOutputFolder_Click"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="{Binding Loc[BrowseButtonText]}" Click="BrowseOutputFolder_Click"/>
                             </Grid>
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Logbestand" Classes="field-label"/>
+                            <TextBlock Text="{Binding Loc[LogFileLabel]}" Classes="field-label"/>
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                 <TextBox Grid.Column="0" Classes="form-control" Text="{Binding LogFilePath}"/>
-                                <Button Grid.Column="1" Classes="secondary-action" Content="Kies..." Click="BrowseLogFile_Click"/>
+                                <Button Grid.Column="1" Classes="secondary-action" Content="{Binding Loc[BrowseButtonText]}" Click="BrowseLogFile_Click"/>
                             </Grid>
-                            <TextBlock Classes="helper-text" Text="Logberichten worden aan dit bestand toegevoegd."/>
+                            <TextBlock Classes="helper-text" Text="{Binding Loc[LogHelperText]}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Row="3" Grid.ColumnSpan="2" Classes="card">
                     <StackPanel Spacing="12">
-                        <TextBlock Text="Inspectie- en proceslog" Classes="section-title"/>
+                        <TextBlock Text="{Binding Loc[LogSectionTitle]}" Classes="section-title"/>
                         <ListBox Classes="log-list"
                                  Height="240"
                                  ItemsSource="{Binding Messages}"
@@ -381,10 +391,10 @@
                     BorderThickness="1"
                     CornerRadius="12"
                     Padding="20">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Excel-bestand laden..." FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding Loc[LoadingExcelText]}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                     <ProgressBar IsIndeterminate="True" Height="8"/>
-                    <TextBlock Text="Even geduld" HorizontalAlignment="Center" Classes="helper-text"/>
+                    <TextBlock Text="{Binding Loc[PleaseWaitText]}" HorizontalAlignment="Center" Classes="helper-text"/>
                 </StackPanel>
             </Border>
         </Border>

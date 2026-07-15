@@ -5,6 +5,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using SEPA_Batch_Generator.ViewModels;
+using SEPA_Batch_Generator.Services;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
@@ -40,14 +41,14 @@ public partial class MainWindow : Window
 
         string message = _viewModel.PendingWarningMessage;
         _viewModel.PendingWarningMessage = string.Empty;
-        await ShowWarningDialogAsync("Waarschuwing", message);
+        await ShowWarningDialogAsync(Localization.Get("WarningTitle"), message);
     }
 
     private async void BrowseExcelFile_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         IReadOnlyList<IStorageFile> selected = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Selecteer Excel bestand",
+            Title = Localization.Get("ChooseExcelFileTitle"),
             AllowMultiple = false,
             FileTypeFilter =
                 [
@@ -69,7 +70,7 @@ public partial class MainWindow : Window
     {
         IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Selecteer output map",
+            Title = Localization.Get("ChooseOutputFolderTitle"),
             AllowMultiple = false
         });
 
@@ -93,7 +94,7 @@ public partial class MainWindow : Window
 
         IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Kies logbestand",
+            Title = Localization.Get("ChooseLogFileTitle"),
             SuggestedFileName = string.IsNullOrWhiteSpace(suggestedName) ? "sepa-log.txt" : suggestedName,
             DefaultExtension = "txt",
             FileTypeChoices =
@@ -117,7 +118,7 @@ public partial class MainWindow : Window
     {
         Button okButton = new()
         {
-            Content = "OK",
+            Content = Localization.Get("OkText"),
             HorizontalAlignment = HorizontalAlignment.Center,
             MinWidth = 90
         };
@@ -159,8 +160,8 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(message))
             return;
 
-        // Check if this is the "Totaalbedrag" message
-        if (message.Contains("Totaalbedrag") && _viewModel is not null)
+        // Check if this is the total amount message
+        if (_viewModel is not null && message.Contains(Localization.Get("LogTotalAmountShort")))
         {
             string breakdown = _viewModel.GetAmountBreakdown();
             await ShowBreakdownDialog(breakdown);
@@ -194,7 +195,7 @@ public partial class MainWindow : Window
 
         Button okButton = new()
         {
-            Content = "OK",
+            Content = Localization.Get("OkText"),
             HorizontalAlignment = HorizontalAlignment.Right,
             MinWidth = 100
         };
@@ -210,7 +211,7 @@ public partial class MainWindow : Window
             Content = panel,
             Width = 700,
             Height = 500,
-            Title = "Overboeking overzicht",
+            Title = Localization.Get("AmountBreakdownDialogTitle"),
             CanResize = true,
             ShowInTaskbar = false,
             SizeToContent = SizeToContent.Manual,
