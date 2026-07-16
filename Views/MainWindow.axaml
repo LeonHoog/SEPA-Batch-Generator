@@ -33,11 +33,17 @@
         </Style>
 
         <Style Selector="Border.status-chip">
-            <Setter Property="Background" Value="#243047"/>
-            <Setter Property="BorderBrush" Value="#33435E"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="100"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="BorderBrush" Value="#33435E"/>
+            <Setter Property="Padding" Value="14,8"/>
+        </Style>
+
+        <Style Selector="Border.status-chip TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="DemiBold"/>
+            <Setter Property="Foreground" Value="#F2F5FA"/>
         </Style>
 
         <Style Selector="TextBlock.section-title">
@@ -146,7 +152,7 @@
                 </StackPanel>
 
                 <Border Grid.Row="0" Grid.Column="1" Classes="status-chip" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Status}" FontWeight="SemiBold" Foreground="#EAF0FA"/>
+                    <TextBlock Text="{Binding Status}"/>
                 </Border>
 
                 <TextBlock Grid.Row="1"
