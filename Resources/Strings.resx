@@ -250,7 +250,7 @@
     <value>Creditor ID (SEPA mandate code)</value>
   </data>
   <data name="CreditorIdHelper" xml:space="preserve">
-    <value>Use the registered creditor ID of the payee.</value>
+    <value>Use the registered creditor ID of the collector.</value>
   </data>
   <data name="ExcelMappingSectionTitle" xml:space="preserve">
     <value>Excel Mapping</value>
