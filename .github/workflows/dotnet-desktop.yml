@@ -22,8 +22,8 @@ jobs:
             artifact: SEPA-Batch-Generator-Windows
           - runtime: linux-x64
             artifact: SEPA-Batch-Generator-Linux
-          # - runtime: osx-arm64
-          #   artifact: SEPA-Batch-Generator-macOS
+          - runtime: osx-arm64
+            artifact: SEPA-Batch-Generator-macOS
 
     steps:
       - name: Checkout repository
