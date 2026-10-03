@@ -21,6 +21,25 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        SizeChanged += OnWindowSizeChanged;
+        UpdateGeneralCreditorLayout(Bounds.Width);
+    }
+
+    private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        UpdateGeneralCreditorLayout(e.NewSize.Width);
+    }
+
+    private void UpdateGeneralCreditorLayout(double width)
+    {
+        bool useTwoColumns = width >= 900;
+
+        GeneralCreditorLayout.ColumnDefinitions = new ColumnDefinitions(useTwoColumns ? "*,*" : "*");
+        GeneralCreditorLayout.RowDefinitions = new RowDefinitions(useTwoColumns ? "Auto" : "Auto,Auto");
+        GeneralCreditorLayout.RowSpacing = useTwoColumns ? 0 : 20;
+        Grid.SetColumn(CreditorCard, useTwoColumns ? 1 : 0);
+        Grid.SetRow(CreditorCard, useTwoColumns ? 0 : 1);
+        CreditorCard.Margin = new Thickness(0);
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -209,7 +228,7 @@ public partial class MainWindow : Window
         Window dialog = new()
         {
             Content = panel,
-            Width = 700,
+            Width = 900,
             Height = 500,
             Title = Localization.Get("AmountBreakdownDialogTitle"),
             CanResize = true,

@@ -21,6 +21,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
             <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="20,20,20,0"/>
         </Style>
 
         <Style Selector="Border.card">
@@ -29,6 +30,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
             <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0"/>
             <Setter Property="BoxShadow" Value="0 8 24 0 #28000000"/>
         </Style>
 
@@ -143,7 +145,7 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*" Margin="20" RowSpacing="18">
+    <Grid RowDefinitions="Auto,*" Margin="0" RowSpacing="10">
         <Border Classes="topbar">
             <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="12">
                 <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="10">
@@ -163,8 +165,18 @@
         </Border>
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="18" RowSpacing="18">
-                <Border Grid.Row="0" Grid.Column="0" Classes="card">
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="18" RowSpacing="18" Margin="20,10,20,0">
+                <Grid x:Name="GeneralCreditorLayout"
+                      Grid.Row="0"
+                      Grid.ColumnSpan="2"
+                      ColumnDefinitions="*,*"
+                      RowDefinitions="Auto"
+                      RowSpacing="10"
+                      ColumnSpacing="20">
+                <Border Classes="card"
+                    Grid.Column="0"
+                    Margin="0"
+                    HorizontalAlignment="Stretch">
                     <StackPanel Spacing="14">
 						<!-- General Settings -->
                         <TextBlock Text="{Binding Loc[GeneralSectionTitle]}" Classes="section-title"/>
@@ -240,7 +252,11 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Row="0" Grid.Column="1" Classes="card">
+                <Border Classes="card"
+                    x:Name="CreditorCard"
+                    Grid.Column="1"
+                    Margin="0"
+                    HorizontalAlignment="Stretch">
                     <StackPanel Spacing="14">
                         <TextBlock Text="{Binding Loc[CreditorSectionTitle]}" Classes="section-title"/>
 
@@ -266,6 +282,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+                </Grid>
 
                 <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card" IsEnabled="{Binding CanEditExcelMapping}">
                     <StackPanel Spacing="14">
@@ -373,7 +390,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Row="3" Grid.ColumnSpan="2" Classes="card">
+                <Border Grid.Row="3" Grid.ColumnSpan="2" Classes="card" Margin="0,0,0,20">
                     <StackPanel Spacing="12">
                         <TextBlock Text="{Binding Loc[LogSectionTitle]}" Classes="section-title"/>
                         <ListBox Classes="log-list"
