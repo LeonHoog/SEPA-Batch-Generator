@@ -1,10 +1,14 @@
 using ClosedXML.Excel;
 using SEPA_Batch_Generator.Models;
+using System.Globalization;
 
 namespace SEPA_Batch_Generator.Services;
 
 public sealed class ExcelDirectDebitImporter
 {
+    private static readonly HashSet<string> NonEuroCurrencyCodes = GetNonEuroCurrencyCodes();
+    private static readonly HashSet<string> NonEuroCurrencySymbols = GetNonEuroCurrencySymbols();
+
     public static List<DirectDebitRecord> Import(
         string excelPath,
         string sheetName,
@@ -63,9 +67,11 @@ public sealed class ExcelDirectDebitImporter
             int amountColumnIndex = ToColumnIndexOrZero(layout.AmountColumn);
             decimal amount = 0;
             string amountText = string.Empty;
+            bool amountHasNonEuroCurrency = false;
             if (amountColumnIndex > 0)
             {
                 IXLCell amountCell = worksheet.Cell(row, amountColumnIndex);
+                amountHasNonEuroCurrency = !amountCell.IsEmpty() && HasNonEuroCurrencyNotation(amountCell);
                 if (amountCell.DataType == XLDataType.Number)
                     amount = amountCell.GetValue<decimal>();
                 else
@@ -76,6 +82,9 @@ public sealed class ExcelDirectDebitImporter
             {
                 continue;
             }
+
+            if (amountHasNonEuroCurrency)
+                messages.Add(Localization.Get("AmountNonEuroCurrencyWarning", row));
 
             if (amount == 0 && !string.IsNullOrWhiteSpace(amountText))
             {
@@ -146,6 +155,40 @@ public sealed class ExcelDirectDebitImporter
 
     private static bool TryParseAmount(string input, out decimal amount) 
         => TextProcessor.TryParseAmount(input, out amount);
+
+    private static bool HasNonEuroCurrencyNotation(IXLCell cell)
+    {
+        string text = cell.GetString();
+        string numberFormat = cell.Style.NumberFormat.Format;
+
+        return ContainsCurrencyMarker(text) || ContainsCurrencyMarker(numberFormat);
+    }
+
+    private static bool ContainsCurrencyMarker(string value)
+    {
+        if (value.Contains("EUR", StringComparison.OrdinalIgnoreCase)
+            || value.Contains('€', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return NonEuroCurrencyCodes.Any(code => value.Contains(code, StringComparison.OrdinalIgnoreCase))
+            || NonEuroCurrencySymbols.Any(symbol => value.Contains(symbol, StringComparison.Ordinal));
+    }
+
+    private static HashSet<string> GetNonEuroCurrencyCodes()
+        => CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+            .Select(culture => new RegionInfo(culture.Name).ISOCurrencySymbol)
+            .Where(code => !string.Equals(code, "EUR", StringComparison.OrdinalIgnoreCase))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static HashSet<string> GetNonEuroCurrencySymbols()
+        => CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+            .Select(culture => new RegionInfo(culture.Name))
+            .Where(region => !string.Equals(region.ISOCurrencySymbol, "EUR", StringComparison.OrdinalIgnoreCase))
+            .Select(region => region.CurrencySymbol)
+            .Where(symbol => !string.IsNullOrWhiteSpace(symbol))
+            .ToHashSet(StringComparer.Ordinal);
 
     private static int ToColumnIndexOrZero(string? column) 
         => TextProcessor.ToColumnIndex(column);

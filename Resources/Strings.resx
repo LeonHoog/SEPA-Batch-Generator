@@ -123,6 +123,15 @@
   <data name="StatusInspectFailed" xml:space="preserve">
     <value>Inspection failed</value>
   </data>
+  <data name="ExcelChangedSinceInspection" xml:space="preserve">
+    <value>The Excel file has changed since inspection. Inspect it again before generating XML.</value>
+  </data>
+  <data name="ExcelChangedDuringInspection" xml:space="preserve">
+    <value>The Excel file changed during inspection. Inspect it again before generating XML.</value>
+  </data>
+  <data name="AmountNonEuroCurrencyWarning" xml:space="preserve">
+    <value>Row {0}: the amount uses non-EUR currency notation. It will be treated as EUR; no currency conversion is performed.</value>
+  </data>
   <data name="NoValidRecordsFound" xml:space="preserve">
     <value>No valid rows found.</value>
   </data>
@@ -341,6 +350,21 @@
   </data>
   <data name="StatusXmlGenerationCompleted" xml:space="preserve">
     <value>XML generation completed</value>
+  </data>
+  <data name="StatusXmlGenerationFailed" xml:space="preserve">
+    <value>XML generation failed</value>
+  </data>
+  <data name="XmlGenerationFailed" xml:space="preserve">
+    <value>XML generation failed: {0}</value>
+  </data>
+  <data name="XmlGenerationLogFailed" xml:space="preserve">
+    <value>XML was generated, but the log could not be written: {0}</value>
+  </data>
+  <data name="XmlGenerationCleanupFailed" xml:space="preserve">
+    <value>Rollback could not remove generated file: {0}</value>
+  </data>
+  <data name="XmlStagingCleanupFailed" xml:space="preserve">
+    <value>Temporary staging data could not be removed: {0}</value>
   </data>
   <data name="Address1Label" xml:space="preserve">
     <value>Address 1 (optional)</value>

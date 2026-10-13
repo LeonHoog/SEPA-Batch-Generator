@@ -123,6 +123,15 @@
   <data name="StatusInspectFailed" xml:space="preserve">
     <value>Verificatie mislukt</value>
   </data>
+  <data name="ExcelChangedSinceInspection" xml:space="preserve">
+    <value>Het Excel-bestand is gewijzigd sinds de verificatie. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
+  </data>
+  <data name="ExcelChangedDuringInspection" xml:space="preserve">
+    <value>Het Excel-bestand is tijdens de verificatie gewijzigd. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
+  </data>
+  <data name="AmountNonEuroCurrencyWarning" xml:space="preserve">
+    <value>Rij {0}: het bedrag gebruikt niet-EUR-valutanotatie. Het wordt als EUR verwerkt; er wordt geen valutaconversie uitgevoerd.</value>
+  </data>
   <data name="NoValidRecordsFound" xml:space="preserve">
     <value>Geen geldige regels gevonden.</value>
   </data>
@@ -341,6 +350,21 @@
   </data>
   <data name="StatusXmlGenerationCompleted" xml:space="preserve">
     <value>XML generatie voltooid</value>
+  </data>
+  <data name="StatusXmlGenerationFailed" xml:space="preserve">
+    <value>XML generatie mislukt</value>
+  </data>
+  <data name="XmlGenerationFailed" xml:space="preserve">
+    <value>XML generatie mislukt: {0}</value>
+  </data>
+  <data name="XmlGenerationLogFailed" xml:space="preserve">
+    <value>XML is gegenereerd, maar het logbestand kon niet worden geschreven: {0}</value>
+  </data>
+  <data name="XmlGenerationCleanupFailed" xml:space="preserve">
+    <value>Rollback kon het gegenereerde bestand niet verwijderen: {0}</value>
+  </data>
+  <data name="XmlStagingCleanupFailed" xml:space="preserve">
+    <value>Tijdelijke tussentijdse opslagbestanden konden niet worden verwijderd: {0}</value>
   </data>
   <data name="Address1Label" xml:space="preserve">
     <value>Adres 1 (optioneel)</value>

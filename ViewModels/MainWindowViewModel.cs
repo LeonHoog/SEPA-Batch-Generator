@@ -17,8 +17,10 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _metadataLoadVersion;
     private string _lastOpenElsewhereWarningPath = string.Empty;
     private bool _isLoadingSettings;
+    private bool _suppressBatchNumberPersistence;
     private int _metadataRefreshDepth;
     private bool _hasLoadedColumnMetadata;
+    private ExcelFileSnapshot? _validatedExcelFile;
     private SepaInputValidator.ValidationResult _lastValidationResult = new([], []);
 
     public ObservableCollection<string> Messages { get; } = [];
@@ -52,7 +54,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string status = Localization.Get("StatusInitial");
     [ObservableProperty] private decimal totalAmount;
 
-    public string TotalAmountDisplay => TotalAmount.ToString("C", CultureInfo.CurrentCulture);
+    public string TotalAmountDisplay => $"€ {TotalAmount.ToString("N2", CultureInfo.CurrentCulture)}";
 
     public LocalizationService Loc => LocalizationService.Instance;
 
@@ -76,6 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnGeneralCollectionDateChanged(DateTimeOffset? value)
     {
+        InvalidateInspection();
         OnPropertyChanged(nameof(ShowCollectionDateColumnMapping));
         OnPropertyChanged(nameof(HasGeneralCollectionDate));
         SaveSettingsQuietly();
@@ -83,6 +86,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnExcelPathChanged(string value)
     {
+        InvalidateInspection();
         OnPropertyChanged(nameof(HasExcelSelected));
         OnPropertyChanged(nameof(CanEditExcelMapping));
         if (_isLoadingSettings) return;
@@ -93,27 +97,40 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSheetNameChanged(string value)
     {
+        InvalidateInspection();
         OnPropertyChanged(nameof(CanEditExcelMapping));
         if (_isLoadingSettings) return;
         SaveSettingsCore(addMessage: false);
         ReloadSettingsFromDisk();
-        // Invalidate previous inspection when the user switches sheets
-        InspectionSucceeded = false;
         _ = ReloadExcelMetadataAsync(loadWorksheets: false);
     }
 
     partial void OnHeaderRowsChanged(int value)
     {
+        InvalidateInspection();
         OnPropertyChanged(nameof(CanEditExcelMapping));
         _ = ReloadExcelMetadataAsync(loadWorksheets: false);
         SaveSettingsQuietly();
     }
 
-    partial void OnFilterColumnChanged(string value) => SaveSettingsQuietly();
-    partial void OnFilterValueChanged(string value) => SaveSettingsQuietly();
+    partial void OnFilterColumnChanged(string value)
+    {
+        InvalidateInspection();
+        SaveSettingsQuietly();
+    }
+
+    partial void OnFilterValueChanged(string value)
+    {
+        InvalidateInspection();
+        SaveSettingsQuietly();
+    }
     partial void OnOutputFolderChanged(string value) => SaveSettingsQuietly();
     partial void OnLogFilePathChanged(string value) => SaveSettingsQuietly();
-    partial void OnGeneralDescriptionChanged(string value) => SaveSettingsQuietly();
+    partial void OnGeneralDescriptionChanged(string value)
+    {
+        InvalidateInspection();
+        SaveSettingsQuietly();
+    }
     partial void OnCreditorNameChanged(string value)
     {
         SaveSettingsQuietly();
@@ -137,7 +154,11 @@ public partial class MainWindowViewModel : ViewModelBase
         SaveSettingsQuietly();
         SaveCreditorQuietly();
     }
-    partial void OnBatchNumberChanged(int value) => SaveSettingsQuietly();
+    partial void OnBatchNumberChanged(int value)
+    {
+        if (!_suppressBatchNumberPersistence)
+            SaveSettingsQuietly();
+    }
 
     [RelayCommand]
     private void ClearGeneralCollectionDate() => GeneralCollectionDate = null;
@@ -153,11 +174,17 @@ public partial class MainWindowViewModel : ViewModelBase
     private void Inspect()
     {
         Messages.Clear();
-        InspectionSucceeded = false;
-        TotalAmount = 0m;
+        InvalidateInspection();
 
         if (!ValidateGeneralInputs())
         {
+            Status = Localization.Get("StatusInspectFailed");
+            return;
+        }
+
+        if (!TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? fileAtStart))
+        {
+            AddMessage(Localization.Get("ExcelChangedSinceInspection"));
             Status = Localization.Get("StatusInspectFailed");
             return;
         }
@@ -174,6 +201,15 @@ public partial class MainWindowViewModel : ViewModelBase
         TotalAmount = _validRecords.Sum(r => r.Amount);
         validationMessages.ForEach(m => AddMessage(m));
 
+        if (!TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? fileAfterImport)
+            || !Equals(fileAtStart, fileAfterImport))
+        {
+            InvalidateInspection();
+            AddMessage(Localization.Get("ExcelChangedDuringInspection"));
+            Status = Localization.Get("StatusInspectFailed");
+            return;
+        }
+
         if (_validRecords.Count == 0)
         {
             AddMessage(Localization.Get("NoValidRecordsFound"));
@@ -183,6 +219,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         LogImportSummary(imported, validationMessages);
+        _validatedExcelFile = fileAfterImport;
         InspectionSucceeded = true;
         Status = validationMessages.Count > 0 ? Localization.Get("StatusInspectContainsWarnings") : Localization.Get("StatusInspectSuccess");
         WriteLog();
@@ -213,13 +250,53 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanGenerateXml))]
     private void GenerateXml()
     {
-        GenerateXmlFiles();
-        SaveSettings();
-        WriteLog();
-        Status = Localization.Get("StatusXmlGenerationCompleted");
+        if (!IsInspectionCurrent())
+            return;
+
+        int previousBatchNumber = BatchNumber;
+        List<string> createdFiles = [];
+
+        try
+        {
+            createdFiles = GenerateXmlFiles(out int nextBatchNumber);
+            SetBatchNumberWithoutPersistence(nextBatchNumber);
+            SaveSettings();
+
+            foreach (string xmlPath in createdFiles)
+                AddMessage(string.Format(Localization.Get("XmlCreated"), xmlPath));
+
+            Status = Localization.Get("StatusXmlGenerationCompleted");
+
+            try
+            {
+                WriteLog();
+            }
+            catch (Exception ex)
+            {
+                AddMessage(string.Format(Localization.Get("XmlGenerationLogFailed"), ex.Message));
+            }
+        }
+        catch (Exception ex)
+        {
+            foreach (string xmlPath in createdFiles)
+            {
+                try
+                {
+                    File.Delete(xmlPath);
+                }
+                catch
+                {
+                    AddMessage(string.Format(Localization.Get("XmlGenerationCleanupFailed"), xmlPath));
+                }
+            }
+
+            SetBatchNumberWithoutPersistence(previousBatchNumber);
+            AddMessage(string.Format(Localization.Get("XmlGenerationFailed"), ex.Message));
+            Status = Localization.Get("StatusXmlGenerationFailed");
+        }
     }
 
-    private void GenerateXmlFiles()
+    private List<string> GenerateXmlFiles(out int nextBatchNumber)
     {
         SepaGenerationSettings settings = new()
         {
@@ -236,15 +313,134 @@ public partial class MainWindowViewModel : ViewModelBase
             .ThenBy(g => g.Key.Seq)
             .ToList();
 
-        foreach (var group in groups)
+        string outputDirectory = Path.GetFullPath(OutputFolder);
+        Directory.CreateDirectory(outputDirectory);
+
+        string stagingDirectory = Path.Combine(outputDirectory, $".sepa-staging-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(stagingDirectory);
+
+        List<(string StagedPath, string FinalPath)> pendingFiles = [];
+        List<string> committedFiles = [];
+        int batchNumber = BatchNumber;
+
+        try
         {
-            string xmlPath = SepaXmlGenerator.Generate(group.ToList(), settings, OutputFolder, BatchNumber);
-            AddMessage(string.Format(Localization.Get("XmlCreated"), xmlPath));
-            BatchNumber++;
+            foreach (var group in groups)
+            {
+                string stagedPath = SepaXmlGenerator.Generate(group.ToList(), settings, stagingDirectory, batchNumber);
+                string finalPath = Path.Combine(outputDirectory, Path.GetFileName(stagedPath));
+
+                if (File.Exists(finalPath) || pendingFiles.Any(file => string.Equals(file.FinalPath, finalPath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new IOException($"Output file already exists: {finalPath}");
+                }
+
+                pendingFiles.Add((stagedPath, finalPath));
+                batchNumber++;
+            }
+
+            foreach ((string stagedPath, string finalPath) in pendingFiles)
+            {
+                File.Move(stagedPath, finalPath);
+                committedFiles.Add(finalPath);
+            }
+
+            nextBatchNumber = batchNumber;
+            return committedFiles;
+        }
+        catch
+        {
+            foreach (string committedPath in committedFiles.AsEnumerable().Reverse())
+            {
+                try
+                {
+                    File.Delete(committedPath);
+                }
+                catch
+                {
+                    AddMessage(string.Format(Localization.Get("XmlGenerationCleanupFailed"), committedPath));
+                }
+            }
+
+            throw;
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(stagingDirectory))
+                    Directory.Delete(stagingDirectory, recursive: true);
+            }
+            catch
+            {
+                AddMessage(string.Format(Localization.Get("XmlStagingCleanupFailed"), stagingDirectory));
+            }
+        }
+    }
+
+    private void SetBatchNumberWithoutPersistence(int value)
+    {
+        _suppressBatchNumberPersistence = true;
+        try
+        {
+            BatchNumber = value;
+        }
+        finally
+        {
+            _suppressBatchNumberPersistence = false;
         }
     }
 
     private bool CanGenerateXml() => InspectionSucceeded;
+
+    private void InvalidateInspection()
+    {
+        InspectionSucceeded = false;
+        _validRecords = [];
+        _lastValidationResult = new([], []);
+        _validatedExcelFile = null;
+        TotalAmount = 0m;
+    }
+
+    private bool IsInspectionCurrent()
+    {
+        if (!InspectionSucceeded || _validatedExcelFile is null)
+            return false;
+
+        if (TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? currentFile)
+            && Equals(_validatedExcelFile, currentFile))
+        {
+            return true;
+        }
+
+        InvalidateInspection();
+        AddMessage(Localization.Get("ExcelChangedSinceInspection"));
+        Status = Localization.Get("StatusInspectFailed");
+        return false;
+    }
+
+    private static bool TryGetExcelFileSnapshot(string path, out ExcelFileSnapshot? snapshot)
+    {
+        try
+        {
+            FileInfo file = new(path);
+            if (!file.Exists)
+            {
+                snapshot = null;
+                return false;
+            }
+
+            snapshot = new ExcelFileSnapshot(file.FullName, file.Length, file.LastWriteTimeUtc);
+            return true;
+        }
+        catch
+        {
+            snapshot = null;
+            return false;
+        }
+    }
+
+    private sealed record ExcelFileSnapshot(string FullPath, long Length, DateTime LastWriteTimeUtc);
 
     private bool ValidateGeneralInputs()
     {
@@ -253,7 +449,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(ExcelPath))
         {
             AddMessage(Localization.Get("Validate_ExcelPathMissing"));
-            return false; // No need to continue when there's no input data provided
+            return false;
         }
 
         if (!GeneralCollectionDate.HasValue && string.IsNullOrWhiteSpace(_settings.ColumnMappings["CollectionDateColumn"]))
@@ -633,6 +829,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void SetColumnProperty(string settingsKey, ColumnOption? value)
     {
         if (value is null) return;
+        InvalidateInspection();
         _settings.ColumnMappings[settingsKey] = TextProcessor.NormalizeColumnId(value.Id);
         OnPropertyChanged(settingsKey + "Option");
         OnPropertyChanged("Is" + settingsKey + "Invalid");
