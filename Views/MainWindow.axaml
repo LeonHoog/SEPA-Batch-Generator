@@ -207,7 +207,7 @@
                         <StackPanel Spacing="6">
                             <TextBlock Text="{Binding Loc[ExcelFileLabel]}" Classes="field-label"/>
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                <TextBox Grid.Column="0" Classes="form-control" Text="{Binding ExcelPath}"/>
+                                <TextBox Grid.Column="0" Classes="form-control" Text="{Binding SpreadsheetPath}"/>
                                 <Button Grid.Column="1" Classes="secondary-action" Content="{Binding Loc[BrowseButtonText]}" Click="BrowseExcelFile_Click"/>
                             </Grid>
                             <TextBlock Classes="helper-text" Text="{Binding Loc[ExcelSelectHelper]}"/>
@@ -216,7 +216,7 @@
                         <StackPanel Spacing="6">
                             <TextBlock Text="{Binding Loc[WorksheetNameLabel]}" Classes="field-label"/>
                             <ComboBox Classes="form-control"
-                                      IsEnabled="{Binding HasExcelSelected}"
+                                      IsEnabled="{Binding HasSpreadsheetSelected}"
                                       ItemsSource="{Binding WorksheetNames}"
                                       SelectedItem="{Binding SheetName}"
                                       IsEditable="False" />
@@ -226,7 +226,7 @@
 						<StackPanel Grid.Column="0" Spacing="6">
 							<TextBlock Text="{Binding Loc[HeaderRowsLabel]}" Classes="field-label"/>
 							<NumericUpDown Classes="form-control"
-										   IsEnabled="{Binding HasExcelSelected}"
+                                           IsEnabled="{Binding HasSpreadsheetSelected}"
 										   Value="{Binding HeaderRows}"
 										   Minimum="0"
 										   Maximum="100"/>
@@ -236,7 +236,7 @@
                             <StackPanel Grid.Column="0" Spacing="6">
                                 <TextBlock Text="{Binding Loc[FilterColumnLabel]}" Classes="field-label"/>
                                 <ComboBox Classes="form-control"
-                                          IsEnabled="{Binding HasExcelSelected}"
+                                          IsEnabled="{Binding HasSpreadsheetSelected}"
                                           ItemsSource="{Binding FilterColumnOptions}"
                                           SelectedItem="{Binding FilterColumn}"
                                           IsEditable="True" />
@@ -245,7 +245,7 @@
                             <StackPanel Grid.Column="1" Spacing="6">
                                 <TextBlock Text="{Binding Loc[FilterValueLabel]}" Classes="field-label"/>
                                 <TextBox Classes="form-control"
-                                         IsEnabled="{Binding HasExcelSelected}"
+                                          IsEnabled="{Binding HasSpreadsheetSelected}"
                                          Text="{Binding FilterValue}"/>
                             </StackPanel>
                         </Grid>
@@ -284,7 +284,7 @@
                 </Border>
                 </Grid>
 
-                <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card" IsEnabled="{Binding CanEditExcelMapping}">
+                <Border Grid.Row="1" Grid.ColumnSpan="2" Classes="card" IsEnabled="{Binding CanEditSpreadsheetMapping}">
                     <StackPanel Spacing="14">
                         <TextBlock Text="{Binding Loc[ExcelMappingSectionTitle]}" Classes="section-title"/>
                             <TextBlock Classes="helper-text" Text="{Binding Loc[ExcelMappingHelper]}"/>
@@ -293,49 +293,49 @@
                             <StackPanel Grid.Column="0" Spacing="10">
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[DebtorNameLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorNameColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorNameColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[DebtorLastNameLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorLastNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorLastNameColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorLastNameColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorLastNameColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[DebtorIbanLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorIbanColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorIbanColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorIbanColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorIbanColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[DebtorBicLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorBicColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorBicColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DebtorBicColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDebtorBicColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[AmountLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding AmountColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAmountColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding AmountColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAmountColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[MandateIdLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateIdColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateIdColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateIdColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateIdColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[MandateDateLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateDateColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding MandateDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsMandateDateColumnInvalid}"/>
                                 </StackPanel>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Spacing="10">
                                 <StackPanel Spacing="6" IsVisible="{Binding ShowCollectionDateColumnMapping}">
                                     <TextBlock Text="{Binding Loc[CollectionDateLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding CollectionDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsCollectionDateColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding CollectionDateColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsCollectionDateColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[SequenceTypeLabel]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding SequenceTypeColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsSequenceTypeColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding SequenceTypeColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsSequenceTypeColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
@@ -345,17 +345,17 @@
 							        <TextBlock Text="{Binding Loc[DescriptionLabel]}" 
 									           Classes="field-label"
 									           IsVisible="{Binding GeneralDescription, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DescriptionColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDescriptionColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding DescriptionColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsDescriptionColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[Address1Label]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address1ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress1ColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address1ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress1ColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Loc[Address2Label]}" Classes="field-label"/>
-                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditExcelMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address2ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress2ColumnInvalid}"/>
+                                    <ComboBox Classes="form-control" IsEnabled="{Binding CanEditSpreadsheetMapping}" ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding Address2ColumnOption, Mode=TwoWay}" IsEditable="False" Classes.column-invalid="{Binding IsAddress2ColumnInvalid}"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="6">
@@ -403,7 +403,7 @@
         </ScrollViewer>
 
         <Border Grid.RowSpan="2"
-                IsVisible="{Binding IsLoadingExcel}"
+                IsVisible="{Binding IsLoadingSpreadsheet}"
                 Background="#A0121822"
                 ZIndex="1000">
             <Border Width="320"

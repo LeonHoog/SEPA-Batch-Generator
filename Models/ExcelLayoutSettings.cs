@@ -1,6 +1,6 @@
 namespace SEPA_Batch_Generator.Models;
 
-public sealed class ExcelLayoutSettings
+public sealed class SpreadsheetLayoutSettings
 {
     public string DebtorNameColumn { get; init; } = string.Empty;
     public string? DebtorLastNameColumn { get; init; }

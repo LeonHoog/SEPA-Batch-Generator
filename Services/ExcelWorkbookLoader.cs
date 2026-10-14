@@ -198,7 +198,7 @@ internal static class ExcelWorkbookLoader
     private static string BuildFriendlyLoadErrorMessage(string excelPath, Exception ex)
     {
         string fileName = Path.GetFileName(excelPath);
-        return $"Excel-bestand '{fileName}' kan niet worden gelezen. Open het bestand opnieuw en sla het eventueel opnieuw op als .xlsx. Technische details: {ex.Message}";
+        return Localization.Get("ExcelReadFailed", fileName, ex.Message);
     }
 
     private static void TryDeleteFile(string filePath)

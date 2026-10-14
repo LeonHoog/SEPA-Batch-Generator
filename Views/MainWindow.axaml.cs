@@ -67,13 +67,13 @@ public partial class MainWindow : Window
     {
         IReadOnlyList<IStorageFile> selected = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = Localization.Get("ChooseExcelFileTitle"),
+            Title = Localization.Get("ChooseSpreadsheetFileTitle"),
             AllowMultiple = false,
             FileTypeFilter =
                 [
-                    new("Excel bestanden")
+                    new(Localization.Get("SpreadsheetFileType"))
                     {
-                        Patterns = ["*.xlsx", "*.xlsm", "*.xls"]
+                        Patterns = ["*.xlsx", "*.xlsm", "*.ods"]
                     }
                 ]
         });
@@ -82,7 +82,7 @@ public partial class MainWindow : Window
         string? localPath = file?.TryGetLocalPath();
 
         if (!string.IsNullOrWhiteSpace(localPath) && DataContext is MainWindowViewModel vm)
-            vm.ExcelPath = localPath;
+            vm.SpreadsheetPath = localPath;
     }
 
     private async void BrowseOutputFolder_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -118,7 +118,7 @@ public partial class MainWindow : Window
             DefaultExtension = "txt",
             FileTypeChoices =
                 [
-                    new("Tekstbestand")
+                    new(Localization.Get("TextFileType"))
                     {
                         Patterns = ["*.txt"],
                         MimeTypes = ["text/plain"]

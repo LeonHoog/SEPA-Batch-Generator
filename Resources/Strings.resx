@@ -124,13 +124,97 @@
     <value>Inspection failed</value>
   </data>
   <data name="ExcelChangedSinceInspection" xml:space="preserve">
-    <value>The Excel file has changed since inspection. Inspect it again before generating XML.</value>
+    <value>The spreadsheet has changed since inspection. Inspect it again before generating XML.</value>
   </data>
   <data name="ExcelChangedDuringInspection" xml:space="preserve">
-    <value>The Excel file changed during inspection. Inspect it again before generating XML.</value>
+    <value>The spreadsheet changed during inspection. Inspect it again before generating XML.</value>
   </data>
   <data name="AmountNonEuroCurrencyWarning" xml:space="preserve">
     <value>Row {0}: the amount uses non-EUR currency notation. It will be treated as EUR; no currency conversion is performed.</value>
+  </data>
+  <data name="SpreadsheetFileNotFound" xml:space="preserve">
+    <value>Spreadsheet file not found: {0}</value>
+  </data>
+  <data name="SpreadsheetReadFailed" xml:space="preserve">
+    <value>The spreadsheet file could not be read.</value>
+  </data>
+  <data name="ExcelReadFailed" xml:space="preserve">
+    <value>Excel file '{0}' could not be read. Open the file again and save it as .xlsx if necessary. Technical details: {1}</value>
+  </data>
+  <data name="WorksheetNotFound" xml:space="preserve">
+    <value>Worksheet not found: {0}</value>
+  </data>
+  <data name="NoDataRowsFound" xml:space="preserve">
+    <value>No data rows found in the worksheet.</value>
+  </data>
+  <data name="AmountUnreadable" xml:space="preserve">
+    <value>Row {0}: amount could not be read ({1}).</value>
+  </data>
+  <data name="MandateDateUnreadable" xml:space="preserve">
+    <value>Row {0}: mandate date could not be read.</value>
+  </data>
+  <data name="CollectionDateUnreadable" xml:space="preserve">
+    <value>Row {0}: collection date could not be read.</value>
+  </data>
+  <data name="ValidationWarningPrefix" xml:space="preserve">
+    <value>WARNING:</value>
+  </data>
+  <data name="DescriptionsBothEmpty" xml:space="preserve">
+    <value>General and row descriptions cannot both be empty.</value>
+  </data>
+  <data name="ValidationNameMissing" xml:space="preserve">
+    <value>Name is missing.</value>
+  </data>
+  <data name="ValidationNameInvalidCharacters" xml:space="preserve">
+    <value>Name contains invalid characters.</value>
+  </data>
+  <data name="ValidationIbanInvalid" xml:space="preserve">
+    <value>IBAN is invalid ({0}).</value>
+  </data>
+  <data name="ValidationAmountNonPositive" xml:space="preserve">
+    <value>Amount must be greater than zero (amount: {0}).</value>
+  </data>
+  <data name="ValidationCollectionDatePast" xml:space="preserve">
+    <value>Collection date is in the past ({0}).</value>
+  </data>
+  <data name="ValidationMandateAndDateMissing" xml:space="preserve">
+    <value>Both mandate ID and signing date are missing.</value>
+  </data>
+  <data name="ValidationMandateMissing" xml:space="preserve">
+    <value>Mandate ID is missing.</value>
+  </data>
+  <data name="ValidationMandateDateMissing" xml:space="preserve">
+    <value>Mandate signing date is missing.</value>
+  </data>
+  <data name="ValidationDescriptionEmpty" xml:space="preserve">
+    <value>Description cannot be empty.</value>
+  </data>
+  <data name="ValidationDescriptionTooLong" xml:space="preserve">
+    <value>Description is longer than 140 characters.</value>
+  </data>
+  <data name="ValidationDescriptionInvalidCharacters" xml:space="preserve">
+    <value>Description contains invalid characters.</value>
+  </data>
+  <data name="ValidationAddress1InvalidCharacters" xml:space="preserve">
+    <value>Address 1 contains invalid characters.</value>
+  </data>
+  <data name="ValidationAddress2InvalidCharacters" xml:space="preserve">
+    <value>Address 2 contains invalid characters.</value>
+  </data>
+  <data name="ValidationSequenceTypeInvalid" xml:space="preserve">
+    <value>Sequence type must be FRST, RCUR, OOFF, or FNAL.</value>
+  </data>
+  <data name="OdsContentMissing" xml:space="preserve">
+    <value>The ODS file does not contain content.xml.</value>
+  </data>
+  <data name="OdsReadFailed" xml:space="preserve">
+    <value>ODS file '{0}' could not be read. Save the file again as .ods. Technical details: {1}</value>
+  </data>
+  <data name="SpreadsheetFileType" xml:space="preserve">
+    <value>Spreadsheet files</value>
+  </data>
+  <data name="TextFileType" xml:space="preserve">
+    <value>Text files</value>
   </data>
   <data name="NoValidRecordsFound" xml:space="preserve">
     <value>No valid rows found.</value>
@@ -178,7 +262,10 @@
     <value>TOTAL</value>
   </data>
   <data name="ChooseExcelFileTitle" xml:space="preserve">
-    <value>Select Excel file</value>
+    <value>Select spreadsheet file</value>
+  </data>
+  <data name="ChooseSpreadsheetFileTitle" xml:space="preserve">
+    <value>Select spreadsheet file</value>
   </data>
   <data name="ChooseOutputFolderTitle" xml:space="preserve">
     <value>Select output folder</value>
@@ -196,7 +283,7 @@
     <value>Transfer overview</value>
   </data>
   <data name="LoadingExcelText" xml:space="preserve">
-    <value>Loading Excel file...</value>
+    <value>Loading spreadsheet...</value>
   </data>
   <data name="PleaseWaitText" xml:space="preserve">
     <value>Please wait</value>
@@ -214,13 +301,13 @@
     <value>General</value>
   </data>
   <data name="ExcelFileLabel" xml:space="preserve">
-    <value>Excel file</value>
+    <value>Spreadsheet file</value>
   </data>
   <data name="BrowseButtonText" xml:space="preserve">
     <value>Choose...</value>
   </data>
   <data name="ExcelSelectHelper" xml:space="preserve">
-    <value>Select the source file for the direct debit import.</value>
+    <value>Select a spreadsheet for the direct debit import.</value>
   </data>
   <data name="WorksheetNameLabel" xml:space="preserve">
     <value>Worksheet name</value>
@@ -262,10 +349,10 @@
     <value>Use the registered creditor ID of the collector.</value>
   </data>
   <data name="ExcelMappingSectionTitle" xml:space="preserve">
-    <value>Excel Mapping</value>
+    <value>Spreadsheet Mapping</value>
   </data>
   <data name="ExcelMappingHelper" xml:space="preserve">
-    <value>Map each required value to the correct column in the Excel file.</value>
+    <value>Map each required value to the correct column in the spreadsheet.</value>
   </data>
   <data name="DebtorNameLabel" xml:space="preserve">
     <value>Debtor (first) name</value>
@@ -319,16 +406,16 @@
     <value>Inspection and process log</value>
   </data>
   <data name="ExcelOpenElsewhereWarning" xml:space="preserve">
-    <value>The selected Excel file appears to be open in another program. Data will still be read (read-only).</value>
+    <value>The selected spreadsheet appears to be open in another program. Data will still be read (read-only).</value>
   </data>
   <data name="Validate_ExcelPathMissing" xml:space="preserve">
-    <value>Excel file path is missing.</value>
+    <value>Spreadsheet file path is missing.</value>
   </data>
   <data name="Validate_CollectionDateMissing" xml:space="preserve">
-    <value>Choose a general collection date or set the Excel column for collection date.</value>
+    <value>Choose a general collection date or set the spreadsheet column for collection date.</value>
   </data>
   <data name="Validate_WaitExcelLoad" xml:space="preserve">
-    <value>Wait until the Excel file and worksheet are fully loaded before using the Excel mapping.</value>
+    <value>Wait until the spreadsheet and worksheet are fully loaded before using the mapping.</value>
   </data>
   <data name="Validate_CollectionDateTooEarly" xml:space="preserve">
     <value>The general collection date must be from {0}.</value>

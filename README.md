@@ -25,7 +25,7 @@ dotnet run -c Release
 
 ## Usage
 1. Open the application.
-2. Load an Excel file containing your direct-debit records.
+2. Load a spreadsheet file (`.ods`, `.xlsx`, `.xlsm`) containing your direct-debit records.
 3. Configure creditor settings (BIC, IBAN, creditor ID, defaults) in the settings UI, which are stored in `creditor.ini`.
 4. Map spreadsheet columns to the expected fields using the column-mapping UI.
 5. Run validation (and check for flagged errors/warnings).

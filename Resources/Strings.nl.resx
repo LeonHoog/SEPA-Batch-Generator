@@ -124,13 +124,97 @@
     <value>Verificatie mislukt</value>
   </data>
   <data name="ExcelChangedSinceInspection" xml:space="preserve">
-    <value>Het Excel-bestand is gewijzigd sinds de verificatie. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
+    <value>De spreadsheet is gewijzigd sinds de verificatie. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
   </data>
   <data name="ExcelChangedDuringInspection" xml:space="preserve">
-    <value>Het Excel-bestand is tijdens de verificatie gewijzigd. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
+    <value>De spreadsheet is tijdens de verificatie gewijzigd. Voer de verificatie opnieuw uit voordat je XML genereert.</value>
   </data>
   <data name="AmountNonEuroCurrencyWarning" xml:space="preserve">
     <value>Rij {0}: het bedrag gebruikt niet-EUR-valutanotatie. Het wordt als EUR verwerkt; er wordt geen valutaconversie uitgevoerd.</value>
+  </data>
+  <data name="SpreadsheetFileNotFound" xml:space="preserve">
+    <value>Spreadsheetbestand niet gevonden: {0}</value>
+  </data>
+  <data name="SpreadsheetReadFailed" xml:space="preserve">
+    <value>Spreadsheetbestand kon niet worden gelezen.</value>
+  </data>
+  <data name="ExcelReadFailed" xml:space="preserve">
+    <value>Excel-bestand '{0}' kan niet worden gelezen. Open het bestand opnieuw en sla het eventueel op als .xlsx. Technische details: {1}</value>
+  </data>
+  <data name="WorksheetNotFound" xml:space="preserve">
+    <value>Werkblad niet gevonden: {0}</value>
+  </data>
+  <data name="NoDataRowsFound" xml:space="preserve">
+    <value>Geen dataregels gevonden in het werkblad.</value>
+  </data>
+  <data name="AmountUnreadable" xml:space="preserve">
+    <value>Rij {0}: bedrag niet leesbaar ({1}).</value>
+  </data>
+  <data name="MandateDateUnreadable" xml:space="preserve">
+    <value>Rij {0}: mandaatdatum niet leesbaar.</value>
+  </data>
+  <data name="CollectionDateUnreadable" xml:space="preserve">
+    <value>Rij {0}: incassodatum niet leesbaar.</value>
+  </data>
+  <data name="ValidationWarningPrefix" xml:space="preserve">
+    <value>WAARSCHUWING:</value>
+  </data>
+  <data name="DescriptionsBothEmpty" xml:space="preserve">
+    <value>Algemene omschrijving en regel-omschrijving mogen niet beide leeg zijn.</value>
+  </data>
+  <data name="ValidationNameMissing" xml:space="preserve">
+    <value>Naam ontbreekt.</value>
+  </data>
+  <data name="ValidationNameInvalidCharacters" xml:space="preserve">
+    <value>Naam bevat ongeoorloofde tekens.</value>
+  </data>
+  <data name="ValidationIbanInvalid" xml:space="preserve">
+    <value>IBAN is ongeldig ({0}).</value>
+  </data>
+  <data name="ValidationAmountNonPositive" xml:space="preserve">
+    <value>Bedrag moet groter zijn dan nul (bedrag: {0}).</value>
+  </data>
+  <data name="ValidationCollectionDatePast" xml:space="preserve">
+    <value>Incassodatum ligt in het verleden ({0}).</value>
+  </data>
+  <data name="ValidationMandateAndDateMissing" xml:space="preserve">
+    <value>Zowel machtigingskenmerk als ondertekeningsdatum ontbreken.</value>
+  </data>
+  <data name="ValidationMandateMissing" xml:space="preserve">
+    <value>Machtigingskenmerk ontbreekt.</value>
+  </data>
+  <data name="ValidationMandateDateMissing" xml:space="preserve">
+    <value>Datum ondertekening machtiging ontbreekt.</value>
+  </data>
+  <data name="ValidationDescriptionEmpty" xml:space="preserve">
+    <value>Omschrijving mag niet leeg zijn.</value>
+  </data>
+  <data name="ValidationDescriptionTooLong" xml:space="preserve">
+    <value>Omschrijving is langer dan 140 tekens.</value>
+  </data>
+  <data name="ValidationDescriptionInvalidCharacters" xml:space="preserve">
+    <value>Omschrijving bevat ongeoorloofde tekens.</value>
+  </data>
+  <data name="ValidationAddress1InvalidCharacters" xml:space="preserve">
+    <value>Adres1 bevat ongeoorloofde tekens.</value>
+  </data>
+  <data name="ValidationAddress2InvalidCharacters" xml:space="preserve">
+    <value>Adres2 bevat ongeoorloofde tekens.</value>
+  </data>
+  <data name="ValidationSequenceTypeInvalid" xml:space="preserve">
+    <value>Sequence type moet FRST, RCUR, OOFF of FNAL zijn.</value>
+  </data>
+  <data name="OdsContentMissing" xml:space="preserve">
+    <value>Het ODS-bestand bevat geen content.xml.</value>
+  </data>
+  <data name="OdsReadFailed" xml:space="preserve">
+    <value>ODS-bestand '{0}' kan niet worden gelezen. Sla het bestand opnieuw op als .ods. Technische details: {1}</value>
+  </data>
+  <data name="SpreadsheetFileType" xml:space="preserve">
+    <value>Spreadsheetbestanden</value>
+  </data>
+  <data name="TextFileType" xml:space="preserve">
+    <value>Tekstbestanden</value>
   </data>
   <data name="NoValidRecordsFound" xml:space="preserve">
     <value>Geen geldige regels gevonden.</value>
@@ -178,7 +262,10 @@
     <value>TOTAAL</value>
   </data>
   <data name="ChooseExcelFileTitle" xml:space="preserve">
-    <value>Selecteer Excel bestand</value>
+    <value>Selecteer spreadsheetbestand</value>
+  </data>
+  <data name="ChooseSpreadsheetFileTitle" xml:space="preserve">
+    <value>Selecteer spreadsheetbestand</value>
   </data>
   <data name="ChooseOutputFolderTitle" xml:space="preserve">
     <value>Selecteer uitvoer map</value>
@@ -196,7 +283,7 @@
     <value>Overboeking overzicht</value>
   </data>
   <data name="LoadingExcelText" xml:space="preserve">
-    <value>Excel-bestand laden...</value>
+    <value>Spreadsheet laden...</value>
   </data>
   <data name="PleaseWaitText" xml:space="preserve">
     <value>Even geduld</value>
@@ -214,13 +301,13 @@
     <value>Algemeen</value>
   </data>
   <data name="ExcelFileLabel" xml:space="preserve">
-    <value>Excel bestand</value>
+    <value>Spreadsheetbestand</value>
   </data>
   <data name="BrowseButtonText" xml:space="preserve">
     <value>Kies...</value>
   </data>
   <data name="ExcelSelectHelper" xml:space="preserve">
-    <value>Selecteer het bronbestand voor de incasso-import.</value>
+    <value>Selecteer een spreadsheet voor de incasso-import.</value>
   </data>
   <data name="WorksheetNameLabel" xml:space="preserve">
     <value>Werkbladnaam</value>
@@ -262,10 +349,10 @@
     <value>Gebruik het geregistreerde crediteur-ID van de incassant.</value>
   </data>
   <data name="ExcelMappingSectionTitle" xml:space="preserve">
-    <value>Excel Mapping</value>
+    <value>Spreadsheet Mapping</value>
   </data>
   <data name="ExcelMappingHelper" xml:space="preserve">
-    <value>Koppel elke vereiste waarde aan de juiste kolom in het Excel-bestand.</value>
+    <value>Koppel elke vereiste waarde aan de juiste kolom in de spreadsheet.</value>
   </data>
   <data name="DebtorNameLabel" xml:space="preserve">
     <value>(Voor)naam debiteur</value>
@@ -319,16 +406,16 @@
     <value>Verificatie- en proceslog</value>
   </data>
   <data name="ExcelOpenElsewhereWarning" xml:space="preserve">
-    <value>Het geselecteerde Excel-bestand lijkt al geopend in een ander programma. De gegevens worden wel gewoon ingelezen (alleen-lezen).</value>
+    <value>De geselecteerde spreadsheet lijkt al geopend in een ander programma. De gegevens worden wel gewoon ingelezen (alleen-lezen).</value>
   </data>
   <data name="Validate_ExcelPathMissing" xml:space="preserve">
-    <value>Excel bestandslocatie ontbreekt.</value>
+    <value>Spreadsheetlocatie ontbreekt.</value>
   </data>
   <data name="Validate_CollectionDateMissing" xml:space="preserve">
     <value>Kies een algemene incassodatum of stel de Excel-kolom voor incassodatum in.</value>
   </data>
   <data name="Validate_WaitExcelLoad" xml:space="preserve">
-    <value>Wacht tot het Excel-bestand en werkblad volledig zijn geladen voordat je de Excel Mapping gebruikt.</value>
+    <value>Wacht tot de spreadsheet en werkblad volledig zijn geladen voordat je de mapping gebruikt.</value>
   </data>
   <data name="Validate_CollectionDateTooEarly" xml:space="preserve">
     <value>De algemene incassodatum moet vanaf {0} zijn.</value>

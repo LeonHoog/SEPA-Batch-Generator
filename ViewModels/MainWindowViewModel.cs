@@ -18,9 +18,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _lastOpenElsewhereWarningPath = string.Empty;
     private bool _isLoadingSettings;
     private bool _suppressBatchNumberPersistence;
-    private int _metadataRefreshDepth;
     private bool _hasLoadedColumnMetadata;
-    private ExcelFileSnapshot? _validatedExcelFile;
+    private SpreadsheetFileSnapshot? _validatedSpreadsheet;
     private SepaInputValidator.ValidationResult _lastValidationResult = new([], []);
 
     public ObservableCollection<string> Messages { get; } = [];
@@ -28,15 +27,15 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<ColumnOption> FilterColumnOptions { get; } = [];
     public ObservableCollection<ColumnOption> ColumnOptions { get; } = [];
 
-    public bool HasExcelSelected => !string.IsNullOrWhiteSpace(ExcelPath) && File.Exists(ExcelPath);
-    public bool CanEditExcelMapping => HasExcelSelected && !IsLoadingExcel && _hasLoadedColumnMetadata;
+    public bool HasSpreadsheetSelected => !string.IsNullOrWhiteSpace(SpreadsheetPath) && File.Exists(SpreadsheetPath);
+    public bool CanEditSpreadsheetMapping => HasSpreadsheetSelected && !IsLoadingSpreadsheet && _hasLoadedColumnMetadata;
     public bool ShowCollectionDateColumnMapping => !GeneralCollectionDate.HasValue;
     public bool HasGeneralCollectionDate => GeneralCollectionDate.HasValue;
     public static DateTimeOffset MinimumCollectionDate => new(DateTime.Today.AddDays(2));
 
-    [ObservableProperty] private bool isLoadingExcel;
+    [ObservableProperty] private bool isLoadingSpreadsheet;
     [ObservableProperty] private string pendingWarningMessage = string.Empty;
-    [ObservableProperty] private string excelPath = string.Empty;
+    [ObservableProperty] private string spreadsheetPath = string.Empty;
     [ObservableProperty] private string sheetName = "Sheet1";
     [ObservableProperty] private int headerRows = 1;
     [ObservableProperty] private string filterColumn = string.Empty;
@@ -69,12 +68,12 @@ public partial class MainWindowViewModel : ViewModelBase
         _isLoadingSettings = true;
         LoadSettings();
         _isLoadingSettings = false;
-        _ = ReloadExcelMetadataAsync();
+        _ = ReloadSpreadsheetMetadataAsync();
     }
 
     partial void OnInspectionSucceededChanged(bool value) => GenerateXmlCommand.NotifyCanExecuteChanged();
     partial void OnTotalAmountChanged(decimal value) => OnPropertyChanged(nameof(TotalAmountDisplay));
-    partial void OnIsLoadingExcelChanged(bool value) => OnPropertyChanged(nameof(CanEditExcelMapping));
+    partial void OnIsLoadingSpreadsheetChanged(bool value) => OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
 
     partial void OnGeneralCollectionDateChanged(DateTimeOffset? value)
     {
@@ -84,32 +83,32 @@ public partial class MainWindowViewModel : ViewModelBase
         SaveSettingsQuietly();
     }
 
-    partial void OnExcelPathChanged(string value)
+    partial void OnSpreadsheetPathChanged(string value)
     {
         InvalidateInspection();
-        OnPropertyChanged(nameof(HasExcelSelected));
-        OnPropertyChanged(nameof(CanEditExcelMapping));
+        OnPropertyChanged(nameof(HasSpreadsheetSelected));
+        OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
         if (_isLoadingSettings) return;
         SaveSettingsCore(addMessage: false);
         ReloadSettingsFromDisk();
-        _ = ReloadExcelMetadataAsync();
+        _ = ReloadSpreadsheetMetadataAsync();
     }
 
     partial void OnSheetNameChanged(string value)
     {
         InvalidateInspection();
-        OnPropertyChanged(nameof(CanEditExcelMapping));
+        OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
         if (_isLoadingSettings) return;
         SaveSettingsCore(addMessage: false);
         ReloadSettingsFromDisk();
-        _ = ReloadExcelMetadataAsync(loadWorksheets: false);
+        _ = ReloadSpreadsheetMetadataAsync(loadWorksheets: false);
     }
 
     partial void OnHeaderRowsChanged(int value)
     {
         InvalidateInspection();
-        OnPropertyChanged(nameof(CanEditExcelMapping));
-        _ = ReloadExcelMetadataAsync(loadWorksheets: false);
+        OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
+        _ = ReloadSpreadsheetMetadataAsync(loadWorksheets: false);
         SaveSettingsQuietly();
     }
 
@@ -182,7 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (!TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? fileAtStart))
+        if (!TryGetSpreadsheetFileSnapshot(SpreadsheetPath, out SpreadsheetFileSnapshot? fileAtStart))
         {
             AddMessage(Localization.Get("ExcelChangedSinceInspection"));
             Status = Localization.Get("StatusInspectFailed");
@@ -190,8 +189,8 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         List<string> importMessages = [];
-        List<DirectDebitRecord> imported = ExcelDirectDebitImporter.Import(
-            ExcelPath, SheetName, HeaderRows, _settings.BuildExcelLayoutSettings(),
+        List<DirectDebitRecord> imported = SpreadsheetDirectDebitImporter.Import(
+            SpreadsheetPath, SheetName, HeaderRows, _settings.BuildSpreadsheetLayoutSettings(),
             FilterColumn, FilterValue, GeneralCollectionDate?.Date, importMessages);
         importMessages.ForEach(m => AddMessage(m));
 
@@ -201,7 +200,7 @@ public partial class MainWindowViewModel : ViewModelBase
         TotalAmount = _validRecords.Sum(r => r.Amount);
         validationMessages.ForEach(m => AddMessage(m));
 
-        if (!TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? fileAfterImport)
+        if (!TryGetSpreadsheetFileSnapshot(SpreadsheetPath, out SpreadsheetFileSnapshot? fileAfterImport)
             || !Equals(fileAtStart, fileAfterImport))
         {
             InvalidateInspection();
@@ -219,7 +218,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         LogImportSummary(imported, validationMessages);
-        _validatedExcelFile = fileAfterImport;
+        _validatedSpreadsheet = fileAfterImport;
         InspectionSucceeded = true;
         Status = validationMessages.Count > 0 ? Localization.Get("StatusInspectContainsWarnings") : Localization.Get("StatusInspectSuccess");
         WriteLog();
@@ -398,17 +397,17 @@ public partial class MainWindowViewModel : ViewModelBase
         InspectionSucceeded = false;
         _validRecords = [];
         _lastValidationResult = new([], []);
-        _validatedExcelFile = null;
+        _validatedSpreadsheet = null;
         TotalAmount = 0m;
     }
 
     private bool IsInspectionCurrent()
     {
-        if (!InspectionSucceeded || _validatedExcelFile is null)
+        if (!InspectionSucceeded || _validatedSpreadsheet is null)
             return false;
 
-        if (TryGetExcelFileSnapshot(ExcelPath, out ExcelFileSnapshot? currentFile)
-            && Equals(_validatedExcelFile, currentFile))
+        if (TryGetSpreadsheetFileSnapshot(SpreadsheetPath, out SpreadsheetFileSnapshot? currentFile)
+            && Equals(_validatedSpreadsheet, currentFile))
         {
             return true;
         }
@@ -419,7 +418,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return false;
     }
 
-    private static bool TryGetExcelFileSnapshot(string path, out ExcelFileSnapshot? snapshot)
+    private static bool TryGetSpreadsheetFileSnapshot(string path, out SpreadsheetFileSnapshot? snapshot)
     {
         try
         {
@@ -430,7 +429,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 return false;
             }
 
-            snapshot = new ExcelFileSnapshot(file.FullName, file.Length, file.LastWriteTimeUtc);
+            snapshot = new SpreadsheetFileSnapshot(file.FullName, file.Length, file.LastWriteTimeUtc);
             return true;
         }
         catch
@@ -440,13 +439,13 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private sealed record ExcelFileSnapshot(string FullPath, long Length, DateTime LastWriteTimeUtc);
+    private sealed record SpreadsheetFileSnapshot(string FullPath, long Length, DateTime LastWriteTimeUtc);
 
     private bool ValidateGeneralInputs()
     {
         bool ok = true;
 
-        if (string.IsNullOrWhiteSpace(ExcelPath))
+        if (string.IsNullOrWhiteSpace(SpreadsheetPath))
         {
             AddMessage(Localization.Get("Validate_ExcelPathMissing"));
             return false;
@@ -458,7 +457,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ok = false;
         }
 
-        if (!CanEditExcelMapping)
+        if (!CanEditSpreadsheetMapping)
         {
             AddMessage(Localization.Get("Validate_WaitExcelLoad"));
             ok = false;
@@ -480,39 +479,37 @@ public partial class MainWindowViewModel : ViewModelBase
         return ok;
     }
 
-    private async Task ReloadExcelMetadataAsync(bool loadWorksheets = true)
+    private async Task ReloadSpreadsheetMetadataAsync(bool loadWorksheets = true)
     {
         int currentVersion = ++_metadataLoadVersion;
 
-        if (!HasExcelSelected)
+        if (!HasSpreadsheetSelected)
         {
             WorksheetNames.Clear();
             FilterColumnOptions.Clear();
             ColumnOptions.Clear();
             _hasLoadedColumnMetadata = false;
-            OnPropertyChanged(nameof(CanEditExcelMapping));
-            IsLoadingExcel = false;
+            OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
+            IsLoadingSpreadsheet = false;
             _lastOpenElsewhereWarningPath = string.Empty;
             return;
         }
 
-        _metadataRefreshDepth++;
-
         try
         {
-            IsLoadingExcel = true;
+            IsLoadingSpreadsheet = true;
 
-            if (loadWorksheets && !string.Equals(_lastOpenElsewhereWarningPath, ExcelPath, StringComparison.OrdinalIgnoreCase)
-                && ExcelMetadataService.IsFileOpenElsewhere(ExcelPath))
+            if (loadWorksheets && !string.Equals(_lastOpenElsewhereWarningPath, SpreadsheetPath, StringComparison.OrdinalIgnoreCase)
+                && SpreadsheetMetadataService.IsFileOpenElsewhere(SpreadsheetPath))
             {
                 PendingWarningMessage = Localization.Get("ExcelOpenElsewhereWarning");
-                _lastOpenElsewhereWarningPath = ExcelPath;
+                _lastOpenElsewhereWarningPath = SpreadsheetPath;
             }
 
             List<string> worksheets = [];
             if (loadWorksheets)
             {
-                (List<string> WorksheetNames, string? ErrorMessage) worksheetResult = await Task.Run(() => ExcelMetadataService.GetWorksheetNames(ExcelPath));
+                (List<string> WorksheetNames, string? ErrorMessage) worksheetResult = await Task.Run(() => SpreadsheetMetadataService.GetWorksheetNames(SpreadsheetPath));
                 worksheets = worksheetResult.WorksheetNames;
                 if (!string.IsNullOrWhiteSpace(worksheetResult.ErrorMessage))
                 {
@@ -520,7 +517,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     WorksheetNames.Clear();
                     FilterColumnOptions.Clear();
                     ColumnOptions.Clear();
-                    OnPropertyChanged(nameof(CanEditExcelMapping));
+                    OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
                     AddMessage(worksheetResult.ErrorMessage);
                     return;
                 }
@@ -532,14 +529,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 selectedSheet = worksheets[0];
             }
 
-            (List<ColumnOption> ColumnOptions, string? ErrorMessage) columnResult = await Task.Run(() => ExcelMetadataService.GetColumnOptions(ExcelPath, selectedSheet, HeaderRows));
+            (List<ColumnOption> ColumnOptions, string? ErrorMessage) columnResult = await Task.Run(() => SpreadsheetMetadataService.GetColumnOptions(SpreadsheetPath, selectedSheet, HeaderRows));
             List<ColumnOption> columns = columnResult.ColumnOptions;
             if (!string.IsNullOrWhiteSpace(columnResult.ErrorMessage))
             {
                 _hasLoadedColumnMetadata = false;
                 FilterColumnOptions.Clear();
                 ColumnOptions.Clear();
-                OnPropertyChanged(nameof(CanEditExcelMapping));
+                OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
                 AddMessage(columnResult.ErrorMessage);
                 return;
             }
@@ -583,7 +580,7 @@ public partial class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(DescriptionColumnOption));
             OnPropertyChanged(nameof(Address1ColumnOption));
             OnPropertyChanged(nameof(Address2ColumnOption));
-            OnPropertyChanged(nameof(CanEditExcelMapping));
+            OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
 
             // Also refresh validation flags so UI stops showing stale invalid state
             OnPropertyChanged(nameof(IsFilterColumnInvalid));
@@ -605,14 +602,13 @@ public partial class MainWindowViewModel : ViewModelBase
             _hasLoadedColumnMetadata = false;
             FilterColumnOptions.Clear();
             ColumnOptions.Clear();
-            OnPropertyChanged(nameof(CanEditExcelMapping));
+            OnPropertyChanged(nameof(CanEditSpreadsheetMapping));
             AddMessage(string.Format(Localization.Get("LoadingColumnsFailed"), ex.Message));
         }
         finally
         {
-            _metadataRefreshDepth--;
             if (currentVersion == _metadataLoadVersion)
-                IsLoadingExcel = false;
+                IsLoadingSpreadsheet = false;
         }
     }
 
@@ -666,7 +662,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void ApplySettingsToViewModel(SettingsManager settings)
     {
-        ExcelPath = settings.ExcelPath;
+        SpreadsheetPath = settings.SpreadsheetPath;
         SheetName = settings.SheetName;
         HeaderRows = settings.HeaderRows;
         FilterColumn = TextProcessor.NormalizeColumnId(settings.FilterColumn);
@@ -680,7 +676,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void ApplyViewModelToSettings(SettingsManager settings)
     {
-        settings.ExcelPath = ExcelPath;
+        settings.SpreadsheetPath = SpreadsheetPath;
         settings.SheetName = SheetName;
         settings.HeaderRows = HeaderRows;
         settings.FilterColumn = FilterColumn;

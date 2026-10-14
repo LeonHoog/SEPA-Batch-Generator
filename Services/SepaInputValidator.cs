@@ -15,7 +15,7 @@ public sealed class SepaInputValidator
 
         if (string.IsNullOrWhiteSpace(generalDescription) && importedRecords.All(r => string.IsNullOrWhiteSpace(r.DescriptionPart)))
         {
-            messages.Add("WAARSCHUWING: Algemene omschrijving en regel-omschrijving mogen niet beide leeg zijn.");
+            messages.Add(Localization.Get("ValidationWarningPrefix") + " " + Localization.Get("DescriptionsBothEmpty"));
         }
 
         foreach (DirectDebitRecord record in importedRecords)
@@ -36,33 +36,18 @@ public sealed class SepaInputValidator
         List<string> errors = [];
 
         if (string.IsNullOrWhiteSpace(record.DebtorName))
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Naam ontbreekt.");
-            errors.Add("Naam ontbreekt");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationNameMissing");
         else if (!TextProcessor.ContainsOnlyAllowedChars(record.DebtorName))
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Naam bevat ongeoorloofde tekens.");
-            errors.Add("Naam bevat ongeoorloofde tekens");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationNameInvalidCharacters");
 
         if (!new IbanValidator().Validate(record.DebtorIban).IsValid)
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: IBAN is ongeldig ({record.DebtorIban}).");
-            errors.Add("IBAN ongeldig");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationIbanInvalid", record.DebtorIban);
 
         if (record.Amount <= 0)
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Bedrag mag niet 0 of negatief zijn (bedrag: {record.Amount}).");
-            errors.Add("Bedrag 0 of negatief");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationAmountNonPositive", record.Amount);
 
         if (record.CollectionDate.Date < DateTime.Today)
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Incassodatum ligt in het verleden ({record.CollectionDate:yyyy-MM-dd}).");
-            errors.Add("Incassodatum in verleden");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationCollectionDatePast", record.CollectionDate.ToString("yyyy-MM-dd"));
 
         bool mandateIdMissing = string.IsNullOrWhiteSpace(record.MandateId);
         bool mandateDateMissing = record.MandateSignedOn == default;
@@ -70,61 +55,43 @@ public sealed class SepaInputValidator
         if (mandateIdMissing || mandateDateMissing)
         {
             if (mandateIdMissing && mandateDateMissing)
-            {
-                messages.Add($"{rowPrefix} WAARSCHUWING: Zowel machtigingskenmerk als ondertekeningsdatum ontbreken.");
-                errors.Add("Machtigingskenmerk en -datum ontbreken");
-            }
+                AddValidationError(messages, errors, rowPrefix, "ValidationMandateAndDateMissing");
             else if (mandateIdMissing)
-            {
-                messages.Add($"{rowPrefix} WAARSCHUWING: Machtigingskenmerk ontbreekt.");
-                errors.Add("Machtigingskenmerk ontbreekt");
-            }
+                AddValidationError(messages, errors, rowPrefix, "ValidationMandateMissing");
             else
-            {
-                messages.Add($"{rowPrefix} WAARSCHUWING: Datum ondertekening machtiging ontbreekt.");
-                errors.Add("Machtigingsdatum ontbreekt");
-            }
+                AddValidationError(messages, errors, rowPrefix, "ValidationMandateDateMissing");
         }
 
         string combinedDescription = TextProcessor.BuildDescription(generalDescription, record.DescriptionPart);
         if (string.IsNullOrWhiteSpace(combinedDescription))
         {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Omschrijving mag niet leeg zijn.");
-            errors.Add("Omschrijving leeg");
+            AddValidationError(messages, errors, rowPrefix, "ValidationDescriptionEmpty");
         }
         else
         {
             if (combinedDescription.Length > 140)
-            {
-                messages.Add($"{rowPrefix} WAARSCHUWING: Omschrijving is langer dan 140 tekens.");
-                errors.Add("Omschrijving te lang");
-            }
+                AddValidationError(messages, errors, rowPrefix, "ValidationDescriptionTooLong");
 
             if (!TextProcessor.ContainsOnlyAllowedChars(combinedDescription))
-            {
-                messages.Add($"{rowPrefix} WAARSCHUWING: Omschrijving bevat ongeoorloofde tekens.");
-                errors.Add("Omschrijving illegale tekens");
-            }
+                AddValidationError(messages, errors, rowPrefix, "ValidationDescriptionInvalidCharacters");
         }
 
         if (!string.IsNullOrWhiteSpace(record.AddressLine1) && !TextProcessor.ContainsOnlyAllowedChars(record.AddressLine1))
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Adres1 bevat ongeoorloofde tekens.");
-            errors.Add("Adres1 illegale tekens");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationAddress1InvalidCharacters");
 
         if (!string.IsNullOrWhiteSpace(record.AddressLine2) && !TextProcessor.ContainsOnlyAllowedChars(record.AddressLine2))
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Adres2 bevat ongeoorloofde tekens.");
-            errors.Add("Adres2 illegale tekens");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationAddress2InvalidCharacters");
 
         if (!Regex.IsMatch(record.SequenceType, "^(FRST|RCUR|OOFF|FNAL)$", RegexOptions.CultureInvariant))
-        {
-            messages.Add($"{rowPrefix} WAARSCHUWING: Sequence type moet FRST/RCUR/OOFF/FNAL zijn.");
-            errors.Add("Sequence type ongeldig");
-        }
+            AddValidationError(messages, errors, rowPrefix, "ValidationSequenceTypeInvalid");
 
         return errors;
+    }
+
+    private static void AddValidationError(List<string> messages, List<string> errors, string rowPrefix, string resourceKey, params object[] args)
+    {
+        string reason = Localization.Get(resourceKey, args);
+        messages.Add($"{rowPrefix} {Localization.Get("ValidationWarningPrefix")} {reason}");
+        errors.Add(reason);
     }
 }

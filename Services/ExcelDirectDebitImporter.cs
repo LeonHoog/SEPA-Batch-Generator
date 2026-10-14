@@ -1,49 +1,48 @@
-using ClosedXML.Excel;
 using SEPA_Batch_Generator.Models;
 using System.Globalization;
 
 namespace SEPA_Batch_Generator.Services;
 
-public sealed class ExcelDirectDebitImporter
+public sealed class SpreadsheetDirectDebitImporter
 {
     private static readonly HashSet<string> NonEuroCurrencyCodes = GetNonEuroCurrencyCodes();
     private static readonly HashSet<string> NonEuroCurrencySymbols = GetNonEuroCurrencySymbols();
 
     public static List<DirectDebitRecord> Import(
-        string excelPath,
+        string spreadsheetPath,
         string sheetName,
         int headerRows,
-        ExcelLayoutSettings layout,
+        SpreadsheetLayoutSettings layout,
         string? filterColumn,
         string? filterValue,
         DateTime? defaultCollectionDate,
         List<string> messages)
     {
         List<DirectDebitRecord> records = [];
-        if (!File.Exists(excelPath))
+        if (!File.Exists(spreadsheetPath))
         {
-            messages.Add($"Excel bestand niet gevonden: {excelPath}");
+            messages.Add(Localization.Get("SpreadsheetFileNotFound", spreadsheetPath));
             return records;
         }
 
-        if (!ExcelWorkbookLoader.TryOpenWorkbook(excelPath, out XLWorkbook? workbook, out string? workbookLoadError))
+        if (!SpreadsheetWorkbook.TryOpen(spreadsheetPath, out SpreadsheetWorkbook? workbook, out string? workbookLoadError))
         {
-            messages.Add(workbookLoadError ?? "Excel-bestand kon niet worden gelezen.");
+            messages.Add(workbookLoadError ?? Localization.Get("SpreadsheetReadFailed"));
             return records;
         }
 
-        using XLWorkbook loadedWorkbook = workbook!;
-        IXLWorksheet? worksheet = loadedWorkbook.Worksheets.FirstOrDefault(ws => string.Equals(ws.Name, sheetName, StringComparison.OrdinalIgnoreCase));
+        using SpreadsheetWorkbook loadedWorkbook = workbook!;
+        SpreadsheetWorksheet? worksheet = loadedWorkbook.Worksheets.FirstOrDefault(ws => string.Equals(ws.Name, sheetName, StringComparison.OrdinalIgnoreCase));
         if (worksheet is null)
         {
-            messages.Add($"Werkblad niet gevonden: {sheetName}");
+            messages.Add(Localization.Get("WorksheetNotFound", sheetName));
             return records;
         }
 
-        int lastUsedRow = worksheet.LastRowUsed()?.RowNumber() ?? 0;
+        int lastUsedRow = worksheet.LastUsedRow;
         if (lastUsedRow <= headerRows)
         {
-            messages.Add("Geen dataregels gevonden in het werkblad.");
+            messages.Add(Localization.Get("NoDataRowsFound"));
             return records;
         }
 
@@ -52,11 +51,9 @@ public sealed class ExcelDirectDebitImporter
         {
             if (filterColumnIndex > 0 && !string.IsNullOrWhiteSpace(filterValue))
             {
-                string currentFilterValue = worksheet.Cell(row, filterColumnIndex).GetString();
+                string currentFilterValue = worksheet.GetCell(row, filterColumnIndex).Text;
                 if (!string.Equals(currentFilterValue?.Trim(), filterValue.Trim(), StringComparison.OrdinalIgnoreCase))
-                {
                     continue;
-                }
             }
 
             string firstNamePart = GetCell(worksheet, row, layout.DebtorNameColumn);
@@ -70,18 +67,16 @@ public sealed class ExcelDirectDebitImporter
             bool amountHasNonEuroCurrency = false;
             if (amountColumnIndex > 0)
             {
-                IXLCell amountCell = worksheet.Cell(row, amountColumnIndex);
-                amountHasNonEuroCurrency = !amountCell.IsEmpty() && HasNonEuroCurrencyNotation(amountCell);
-                if (amountCell.DataType == XLDataType.Number)
-                    amount = amountCell.GetValue<decimal>();
+                SpreadsheetCell amountCell = worksheet.GetCell(row, amountColumnIndex);
+                amountHasNonEuroCurrency = !string.IsNullOrWhiteSpace(amountCell.Text) && HasNonEuroCurrencyNotation(amountCell);
+                if (amountCell.IsNumber && TryParseNumericAmount(amountCell.Text, out decimal numericAmount))
+                    amount = numericAmount;
                 else
-                    amountText = amountCell.GetString();
+                    amountText = amountCell.Text;
             }
 
             if (string.IsNullOrWhiteSpace(debtorName) && string.IsNullOrWhiteSpace(debtorIban) && string.IsNullOrWhiteSpace(amountText))
-            {
                 continue;
-            }
 
             if (amountHasNonEuroCurrency)
                 messages.Add(Localization.Get("AmountNonEuroCurrencyWarning", row));
@@ -90,7 +85,7 @@ public sealed class ExcelDirectDebitImporter
             {
                 if (!TryParseAmount(amountText, out amount))
                 {
-                    messages.Add($"Rij {row}: bedrag niet leesbaar ({amountText}).");
+                    messages.Add(Localization.Get("AmountUnreadable", row, amountText));
                     amount = 0;
                 }
             }
@@ -100,20 +95,18 @@ public sealed class ExcelDirectDebitImporter
 
             if (!TryParseDate(GetCell(worksheet, row, layout.MandateDateColumn), out DateTime mandateDate))
             {
-                messages.Add($"Rij {row}: mandaatdatum niet leesbaar.");
+                messages.Add(Localization.Get("MandateDateUnreadable", row));
             }
 
             DateTime collectionDate = defaultCollectionDate ?? default;
             if (!defaultCollectionDate.HasValue && !TryParseDate(GetCell(worksheet, row, layout.CollectionDateColumn), out collectionDate))
             {
-                messages.Add($"Rij {row}: incassodatum niet leesbaar.");
+                messages.Add(Localization.Get("CollectionDateUnreadable", row));
             }
 
             string sequenceType = GetCell(worksheet, row, layout.SequenceTypeColumn).ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(sequenceType))
-            {
                 sequenceType = "RCUR";
-            }
 
             records.Add(new DirectDebitRecord
             {
@@ -141,13 +134,13 @@ public sealed class ExcelDirectDebitImporter
     private static string ReplaceSpecialCharacters(string input) 
         => TextProcessor.RemoveDiacritics(input);
 
-    private static string GetCell(IXLWorksheet worksheet, int row, string? column)
+    private static string GetCell(SpreadsheetWorksheet worksheet, int row, string? column)
     {
         int index = ToColumnIndexOrZero(column);
         if (index <= 0)
             return string.Empty;
 
-        return worksheet.Cell(row, index).GetString().Trim();
+        return worksheet.GetCell(row, index).Text.Trim();
     }
 
     private static bool TryParseDate(string input, out DateTime value) 
@@ -156,12 +149,13 @@ public sealed class ExcelDirectDebitImporter
     private static bool TryParseAmount(string input, out decimal amount) 
         => TextProcessor.TryParseAmount(input, out amount);
 
-    private static bool HasNonEuroCurrencyNotation(IXLCell cell)
-    {
-        string text = cell.GetString();
-        string numberFormat = cell.Style.NumberFormat.Format;
+    private static bool TryParseNumericAmount(string input, out decimal amount)
+        => decimal.TryParse(input, NumberStyles.Any, CultureInfo.InvariantCulture, out amount)
+           || decimal.TryParse(input, NumberStyles.Any, CultureInfo.CurrentCulture, out amount);
 
-        return ContainsCurrencyMarker(text) || ContainsCurrencyMarker(numberFormat);
+    private static bool HasNonEuroCurrencyNotation(SpreadsheetCell cell)
+    {
+        return ContainsCurrencyMarker(cell.Text) || ContainsCurrencyMarker(cell.NumberFormat);
     }
 
     private static bool ContainsCurrencyMarker(string value)

@@ -10,7 +10,7 @@ public sealed class SettingsManager
 {
     private readonly string _filePath;
 
-    public string ExcelPath { get; set; } = string.Empty;
+    public string SpreadsheetPath { get; set; } = string.Empty;
     public string SheetName { get; set; } = "Sheet1";
     public int HeaderRows { get; set; } = 1;
     public string FilterColumn { get; set; } = string.Empty;
@@ -49,7 +49,7 @@ public sealed class SettingsManager
     {
         Dictionary<string, string> values = IniSettingsService.Load(_filePath, "SEPA");
 
-        ExcelPath = Get(values, nameof(ExcelPath), ExcelPath);
+        SpreadsheetPath = Get(values, nameof(SpreadsheetPath), Get(values, "ExcelPath", SpreadsheetPath));
         SheetName = Get(values, nameof(SheetName), SheetName);
         HeaderRows = ParseInt(Get(values, nameof(HeaderRows), HeaderRows.ToString()), HeaderRows);
         FilterColumn = TextProcessor.NormalizeColumnId(Get(values, nameof(FilterColumn), FilterColumn));
@@ -71,7 +71,7 @@ public sealed class SettingsManager
     {
         Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase)
         {
-            [nameof(ExcelPath)] = ExcelPath,
+            [nameof(SpreadsheetPath)] = SpreadsheetPath,
             [nameof(SheetName)] = SheetName,
             [nameof(HeaderRows)] = HeaderRows.ToString(),
             [nameof(FilterColumn)] = FilterColumn,
@@ -89,7 +89,7 @@ public sealed class SettingsManager
         IniSettingsService.Save(_filePath, "SEPA", values);
     }
 
-    public ExcelLayoutSettings BuildExcelLayoutSettings() => new()
+    public SpreadsheetLayoutSettings BuildSpreadsheetLayoutSettings() => new()
     {
         DebtorNameColumn = GetColumn("DebtorNameColumn"),
         DebtorLastNameColumn = GetColumn("DebtorLastNameColumn"),
